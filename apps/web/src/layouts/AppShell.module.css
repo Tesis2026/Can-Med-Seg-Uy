@@ -1,0 +1,145 @@
+.shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-page-bg);
+}
+
+.header {
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+  height: var(--header-height);
+  flex-shrink: 0;
+}
+
+.headerInner {
+  height: 100%;
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.leftHdr {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+  height: 100%;
+}
+
+.logoBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--logo-width);
+  height: 100%;
+  background: var(--color-surface);
+  text-decoration: none;
+  flex-shrink: 0;
+  padding: 0 8px;
+}
+
+.logoText {
+  color: var(--color-primary);
+  font-size: 9px;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.headerTitle {
+  font-size: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.menuArea {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.menuBtn {
+  background: transparent;
+  border: none;
+  color: var(--color-primary-contrast);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.menuBtn:hover {
+  text-decoration: underline;
+}
+
+.main {
+  flex: 1;
+  width: 100%;
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: 32px 80px;
+}
+
+.footer {
+  background: var(--color-footer-bg);
+  min-height: var(--footer-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 24px;
+  flex-shrink: 0;
+}
+
+.footerText {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.footerPowered {
+  display: none;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .headerInner {
+    padding: 0 12px;
+  }
+
+  .logoBox {
+    width: var(--logo-width-mobile);
+  }
+
+  .logoText {
+    font-size: 8px;
+  }
+
+  .headerTitle {
+    font-size: 13px;
+  }
+
+  .main {
+    padding: 24px 16px;
+  }
+
+  .footer {
+    flex-direction: column;
+    justify-content: center;
+    min-height: auto;
+    padding: 8px 16px;
+  }
+
+  .footerPowered {
+    display: block;
+  }
+}

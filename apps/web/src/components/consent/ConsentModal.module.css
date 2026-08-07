@@ -1,0 +1,114 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgba(26, 26, 26, 0.45);
+}
+
+.modal {
+  width: min(1000px, 100%);
+  max-height: min(90vh, 900px);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.75rem 2rem;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+}
+
+.modalNarrow {
+  width: min(900px, 100%);
+}
+
+.title {
+  margin: 0;
+  color: #1a4a8c;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.body {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  color: #222222;
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+.body p {
+  margin: 0;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 0.25rem;
+}
+
+.cancelBtn,
+.acceptBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.cancelBtn {
+  background: #ffffff;
+  color: #1a4a8c;
+  border-color: #1a4a8c;
+}
+
+.cancelBtn:hover {
+  background: rgba(26, 74, 140, 0.06);
+}
+
+.acceptBtn {
+  background: #1a4a8c;
+  color: #ffffff;
+}
+
+.acceptBtn:hover {
+  filter: brightness(1.06);
+}
+
+@media (max-width: 640px) {
+  .backdrop {
+    padding: 1rem;
+    align-items: flex-end;
+  }
+
+  .modal,
+  .modalNarrow {
+    width: 100%;
+    max-height: 85vh;
+    padding: 1.25rem 1rem;
+    border-radius: 8px 8px 0 0;
+  }
+
+  .actions {
+    flex-direction: column-reverse;
+  }
+
+  .cancelBtn,
+  .acceptBtn {
+    width: 100%;
+  }
+}

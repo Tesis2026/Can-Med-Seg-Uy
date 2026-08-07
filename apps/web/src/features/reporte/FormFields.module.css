@@ -1,0 +1,245 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.label {
+  color: var(--color-text-label);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.req {
+  color: #b00020;
+}
+
+.hint {
+  margin: 0;
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.error {
+  margin: 0;
+  font-size: 12px;
+  color: #b00020;
+}
+
+.input,
+.select,
+.textarea {
+  width: 100%;
+  height: var(--input-height);
+  border: 1px solid var(--color-border);
+  background: #ffffff;
+  padding: 0 12px;
+  color: var(--color-text);
+  border-radius: 0;
+}
+
+.textarea {
+  height: auto;
+  min-height: 88px;
+  padding: 8px 12px;
+  resize: vertical;
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  color: var(--color-placeholder);
+}
+
+.inputError {
+  border-color: #b00020;
+}
+
+.select {
+  max-width: 320px;
+}
+
+.unitRow {
+  display: flex;
+  align-items: stretch;
+  max-width: 280px;
+}
+
+.unitInput {
+  border-right: none;
+}
+
+.unitBox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  background: var(--color-unit);
+  border: 1px solid var(--color-border);
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+.dateRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.datePart {
+  width: 96px;
+  max-width: 100%;
+}
+
+.dateYear {
+  width: 100px;
+  max-width: 100%;
+}
+
+.subCard {
+  background: var(--color-subcard);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.subCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.subTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.subCardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.removeBtn {
+  background: transparent;
+  border: none;
+  color: var(--color-primary);
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.addBtn {
+  align-self: flex-start;
+  background: var(--color-primary-light);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-btn);
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.addBtn:hover {
+  filter: brightness(1.05);
+}
+
+.checkList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.checkItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--color-text);
+}
+
+.checkItem input {
+  margin-top: 3px;
+}
+
+.combo {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+}
+
+.comboList {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+  background: #ffffff;
+  border: 1px solid var(--color-border);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.comboOption {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.comboOption:hover,
+.comboOption:focus-visible {
+  background: #eef3f9;
+  outline: none;
+}
+
+.comboOptionActive {
+  background: #e3ecf7;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.comboEmpty {
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+@media (max-width: 640px) {
+  .select {
+    max-width: none;
+  }
+
+  .combo {
+    max-width: none;
+  }
+
+  .unitRow {
+    max-width: none;
+  }
+
+  .dateRow {
+    flex-direction: column;
+  }
+
+  .datePart,
+  .dateYear {
+    width: 100%;
+  }
+}

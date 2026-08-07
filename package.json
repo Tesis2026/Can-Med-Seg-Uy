@@ -1,0 +1,17 @@
+{
+  "name": "can-med-seg-uy",
+  "private": true,
+  "version": "0.0.1",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @canmedseg/web",
+    "build": "npm run build -w @canmedseg/web",
+    "typecheck": "npm run typecheck -w @canmedseg/shared && npm run typecheck -w @canmedseg/web"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
