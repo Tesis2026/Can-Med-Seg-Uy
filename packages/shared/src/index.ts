@@ -14,6 +14,8 @@ export {
   contactSchema,
   adverseEventReportDraftSchema,
   seriousnessCriterionSchema,
+  severityGradeSchema,
+  causalitySchema,
   createEmptyReportDraft,
   createEmptyAdverseEvent,
   createEmptyMedicine,
@@ -25,4 +27,6 @@ export {
   type Contact,
   type AdverseEventReportDraft,
   type SeriousnessCriterion,
+  type SeverityGrade,
+  type Causality,
 } from "./schemas/report";

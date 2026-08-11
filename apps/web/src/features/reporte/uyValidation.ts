@@ -95,11 +95,12 @@ export function emailError(value: string, required: boolean): string | null {
   return null;
 }
 
-/** Iniciales: 1–10 letras (con espacios/puntos opcionales). */
+/** Iniciales: máx. 4 caracteres (diccionario var. 1.0). */
 export function initialsError(value: string, required: boolean): string | null {
   const raw = value.trim();
   if (!raw) return required ? "Campo obligatorio" : null;
-  if (!/^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]{1,15}$/.test(raw)) {
+  if (raw.length > 4) return "Máximo 4 caracteres";
+  if (!/^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]{1,4}$/.test(raw)) {
     return "Use solo letras (ej. J.P. o JP)";
   }
   return null;

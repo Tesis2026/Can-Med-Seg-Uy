@@ -99,14 +99,8 @@ export function ReporteWizardPage() {
             <StepEventos
               draft={draft}
               errors={errors}
-              onChange={(eventsOrUpdater) =>
-                updateDraft((prev) => ({
-                  ...prev,
-                  events:
-                    typeof eventsOrUpdater === "function"
-                      ? eventsOrUpdater(prev.events)
-                      : eventsOrUpdater,
-                }))
+              onChange={(patch) =>
+                updateDraft((prev) => ({ ...prev, ...patch }))
               }
             />
           ) : null}

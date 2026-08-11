@@ -89,8 +89,10 @@ type UnitInputProps = {
   placeholder?: string;
   hasError?: boolean;
   min?: number;
+  max?: number;
   step?: string | number;
-  onChange: (value: string) => void;
+  readOnly?: boolean;
+  onChange?: (value: string) => void;
 };
 
 export function UnitInput({
@@ -101,7 +103,9 @@ export function UnitInput({
   placeholder,
   hasError,
   min,
+  max,
   step,
+  readOnly,
   onChange,
 }: UnitInputProps) {
   return (
@@ -115,8 +119,12 @@ export function UnitInput({
         value={value}
         placeholder={placeholder}
         min={min}
+        max={max}
         step={step}
-        onChange={(e) => onChange(e.target.value)}
+        readOnly={readOnly}
+        onChange={
+          readOnly || !onChange ? undefined : (e) => onChange(e.target.value)
+        }
       />
       <span className={styles.unitBox}>{unit}</span>
     </div>
@@ -140,6 +148,19 @@ export function parseDateParts(isoOrSlash: string): DateParts {
   return { day: "", month: "", year: "" };
 }
 
+/** Año mínimo permitido en fechas del formulario. */
+export const DATE_YEAR_MIN = 1900;
+
+function startOfTodayLocal(): Date {
+  const t = new Date();
+  return new Date(t.getFullYear(), t.getMonth(), t.getDate());
+}
+
+/** Año máximo = año corriente (fechas hasta hoy). */
+export function dateYearMax(): number {
+  return startOfTodayLocal().getFullYear();
+}
+
 /** Keep raw segments while typing — do not pad empty parts to "00". */
 export function formatDateParts(parts: DateParts): string {
   const { day, month, year } = parts;
@@ -156,7 +177,8 @@ export function normalizeDateValue(value: string): string {
   const d = Number(parts.day);
   const m = Number(parts.month);
   const y = Number(parts.year);
-  if (y < 1900 || y > 2100 || m < 1 || m > 12 || d < 1 || d > 31) {
+  const maxYear = dateYearMax();
+  if (y < DATE_YEAR_MIN || y > maxYear || m < 1 || m > 12 || d < 1 || d > 31) {
     return formatDateParts(parts);
   }
   const date = new Date(y, m - 1, d);
@@ -165,6 +187,9 @@ export function normalizeDateValue(value: string): string {
     date.getMonth() !== m - 1 ||
     date.getDate() !== d
   ) {
+    return formatDateParts(parts);
+  }
+  if (date.getTime() > startOfTodayLocal().getTime()) {
     return formatDateParts(parts);
   }
   return `${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}/${y}`;
@@ -176,7 +201,7 @@ export function isCompleteDate(value: string): boolean {
 
 /**
  * null = OK.
- * Distingue vacío / incompleto / inválida (ej. año 1222 fuera de rango).
+ * Distingue vacío / incompleto / inválida (ej. año fuera de 1900–hoy).
  */
 export function dateValidationError(
   value: string,
@@ -195,13 +220,14 @@ export function dateValidationError(
   const d = Number(parts.day);
   const m = Number(parts.month);
   const y = Number(parts.year);
+  const maxYear = dateYearMax();
 
   if (m < 1 || m > 12 || d < 1 || d > 31) {
     return "Fecha inválida (revise día y mes)";
   }
 
-  if (y < 1900 || y > 2100) {
-    return "Año inválido: use un año entre 1900 y 2100 (ej. 2022)";
+  if (y < DATE_YEAR_MIN || y > maxYear) {
+    return `Año inválido: use un año entre ${DATE_YEAR_MIN} y ${maxYear}`;
   }
 
   const date = new Date(y, m - 1, d);
@@ -211,6 +237,10 @@ export function dateValidationError(
     date.getDate() !== d
   ) {
     return "Fecha inválida (día inexistente en ese mes)";
+  }
+
+  if (date.getTime() > startOfTodayLocal().getTime()) {
+    return "La fecha no puede ser posterior a hoy";
   }
 
   return null;

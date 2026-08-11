@@ -2,7 +2,9 @@ import {
   createEmptyAdverseEvent,
   type AdverseEvent,
   type AdverseEventReportDraft,
+  type Causality,
   type SeriousnessCriterion,
+  type SeverityGrade,
 } from "@canmedseg/shared";
 
 import {
@@ -12,7 +14,6 @@ import {
   SearchableSelect,
   SelectInput,
   SubCard,
-  TextInput,
   UnitInput,
 } from "../FormFields";
 import fieldStyles from "../FormFields.module.css";
@@ -22,297 +23,301 @@ import {
   MEDDRA_DEMO_OPTIONS,
   SERIOUSNESS_OPTIONS,
   SEVERITY_GRADE_OPTIONS,
+  YES_NO_OPTIONS,
 } from "../options";
 import type { StepErrors } from "../validate";
+import {
+  computeAgeYears,
+  durationDaysBetween,
+  earliestEventStartDate,
+} from "../validate";
 
 type StepEventosProps = {
   draft: AdverseEventReportDraft;
   errors: StepErrors;
-  onChange: (
-    events:
-      | AdverseEvent[]
-      | ((prev: AdverseEvent[]) => AdverseEvent[]),
-  ) => void;
+  onChange: (patch: Partial<AdverseEventReportDraft>) => void;
 };
-
-function parseOptionalNumber(raw: string): number | undefined {
-  if (raw.trim() === "") return undefined;
-  const n = Number(raw);
-  return Number.isFinite(n) ? n : undefined;
-}
 
 export function StepEventos({ draft, errors, onChange }: StepEventosProps) {
   const events = draft.events;
 
+  function setEvents(
+    next: AdverseEvent[] | ((prev: AdverseEvent[]) => AdverseEvent[]),
+  ) {
+    const eventsNext = typeof next === "function" ? next(events) : next;
+    const ageAtEventStart = computeAgeYears(
+      draft.patient.birthDate,
+      earliestEventStartDate({ ...draft, events: eventsNext }),
+    );
+    onChange({
+      events: eventsNext,
+      patient: {
+        ...draft.patient,
+        ageAtEventStart,
+      },
+    });
+  }
+
   function updateAt(index: number, partial: Partial<AdverseEvent>) {
-    onChange((prev) =>
+    setEvents((prev) =>
       prev.map((ev, i) => (i === index ? { ...ev, ...partial } : ev)),
     );
   }
 
-  function toggleCriterion(
-    index: number,
-    criterion: SeriousnessCriterion,
-    checked: boolean,
-  ) {
-    const current = events[index].seriousnessCriteria ?? [];
-    const next = checked
-      ? [...current, criterion]
-      : current.filter((c) => c !== criterion);
-    updateAt(index, { seriousnessCriteria: next });
-  }
-
   return (
     <>
-      <p className={fieldStyles.hint} style={{ fontSize: 14, color: "var(--color-text-secondary)" }}>
-        Describa cada evento adverso. Presione el botón &quot;Agregar otro evento
-        adverso&quot; para agregar otros eventos que necesite describir.
-      </p>
+      <Field
+        label="Evento adverso"
+        htmlFor="f-evento-desc"
+        required
+        error={errors.adverseEventDescription}
+      >
+        <textarea
+          id="f-evento-desc"
+          className={fieldStyles.textarea}
+          value={draft.adverseEventDescription}
+          maxLength={500}
+          rows={4}
+          onChange={(e) =>
+            onChange({ adverseEventDescription: e.target.value })
+          }
+        />
+      </Field>
 
       {errors.events ? (
         <p className={fieldStyles.error}>{errors.events}</p>
       ) : null}
 
-      {events.map((ev, index) => (
-        <SubCard
-          key={index}
-          title={`Eventos adversos${events.length > 1 ? ` (${index + 1})` : ""}`}
-          hint="Módulo repetible. Complete los datos de cada evento adverso."
-          onRemove={
-            events.length > 1
-              ? () =>
-                  onChange((prev) => prev.filter((_, i) => i !== index))
-              : undefined
-          }
-        >
-          <Field
-            label="Reacción/Síntoma"
-            htmlFor={`ev-${index}-meddra`}
-            hint="Clasificación según diccionario médico MedDRA"
+      {events.map((ev, index) => {
+        return (
+          <SubCard
+            key={index}
+            title={`Reacción/Síntoma${events.length > 1 ? ` (${index + 1})` : ""}`}
+            hint="Módulo repetible (preguntas 11 a 17)."
+            onRemove={
+              events.length > 1
+                ? () => setEvents((prev) => prev.filter((_, i) => i !== index))
+                : undefined
+            }
           >
-            <SearchableSelect
-              id={`ev-${index}-meddra`}
-              options={MEDDRA_DEMO_OPTIONS}
-              value={ev.meddraTerm ?? ""}
-              placeholder="Buscar término MedDRA..."
-              onChange={(meddraTerm) => updateAt(index, { meddraTerm })}
-            />
-          </Field>
-
-          <Field
-            label="Evento adverso"
-            htmlFor={`ev-${index}-desc`}
-            required
-            error={errors[`events.${index}.description`]}
-          >
-            <TextInput
-              id={`ev-${index}-desc`}
-              value={ev.description}
-              hasError={Boolean(errors[`events.${index}.description`])}
-              onChange={(e) => updateAt(index, { description: e.target.value })}
-            />
-          </Field>
-
-          <Field
-            label="Fecha de inicio del evento adverso"
-            required
-            error={errors[`events.${index}.startDate`]}
-            hint="Formato dd/mm/aaaa — año entre 1900 y 2100"
-          >
-            <DateTriple
-              idPrefix={`ev-${index}-start`}
-              value={ev.startDate ?? ""}
-              hasError={Boolean(errors[`events.${index}.startDate`])}
-              onChange={(startDate) => updateAt(index, { startDate })}
-            />
-          </Field>
-
-          <Field
-            label="Fecha de finalización del evento adverso"
-            error={errors[`events.${index}.endDate`]}
-            hint="En caso de aún no haber finalizado, no completar"
-          >
-            <DateTriple
-              idPrefix={`ev-${index}-end`}
-              value={ev.endDate ?? ""}
-              hasError={Boolean(errors[`events.${index}.endDate`])}
-              onChange={(endDate) => updateAt(index, { endDate })}
-            />
-          </Field>
-
-          <Field
-            label="Duración del evento adverso"
-            htmlFor={`ev-${index}-dur`}
-            error={errors[`events.${index}.durationDays`]}
-            hint="Duración de la manifestación clínica"
-          >
-            <UnitInput
-              id={`ev-${index}-dur`}
-              unit="días"
-              value={ev.durationDays?.toString() ?? ""}
-              min={0}
-              hasError={Boolean(errors[`events.${index}.durationDays`])}
-              onChange={(v) =>
-                updateAt(index, { durationDays: parseOptionalNumber(v) })
-              }
-            />
-          </Field>
-
-          <Field label="Estado actual del evento adverso" htmlFor={`ev-${index}-out`}>
-            <SelectInput
-              id={`ev-${index}-out`}
-              value={ev.outcome ?? ""}
-              onChange={(e) =>
-                updateAt(index, {
-                  outcome: e.target.value
-                    ? (e.target.value as AdverseEvent["outcome"])
-                    : undefined,
-                })
-              }
+            <Field
+              label="Reacción/Síntoma"
+              htmlFor={`ev-${index}-meddra`}
+              required
+              error={errors[`events.${index}.meddraTerm`]}
+              hint="Clasificación según diccionario médico MedDRA"
             >
-              {EVENT_OUTCOME_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </SelectInput>
-          </Field>
+              <SearchableSelect
+                id={`ev-${index}-meddra`}
+                options={MEDDRA_DEMO_OPTIONS}
+                value={ev.meddraTerm ?? ""}
+                placeholder="Buscar término MedDRA..."
+                onChange={(meddraTerm) => updateAt(index, { meddraTerm })}
+              />
+            </Field>
 
-          <Field
-            label="¿El evento adverso fue grave?"
-            htmlFor={`ev-${index}-grave`}
-            required
-            error={errors[`events.${index}.isSerious`]}
-            hint="Criterios: amenaza de vida, muerte, hospitalización, discapacidad, malformación congénita u otra condición médica importante"
-          >
-            <SelectInput
-              id={`ev-${index}-grave`}
-              value={
-                ev.isSerious === undefined ? "" : ev.isSerious ? "si" : "no"
-              }
-              hasError={Boolean(errors[`events.${index}.isSerious`])}
-              onChange={(e) => {
-                if (!e.target.value) {
-                  updateAt(index, { isSerious: undefined });
-                  return;
+            <Field
+              label="Fecha de inicio del evento adverso"
+              required
+              error={errors[`events.${index}.startDate`]}
+              hint="dd/mm/aaaa — desde la fecha de nacimiento hasta hoy"
+            >
+              <DateTriple
+                idPrefix={`ev-${index}-start`}
+                value={ev.startDate ?? ""}
+                hasError={Boolean(errors[`events.${index}.startDate`])}
+                onChange={(startDate) => {
+                  updateAt(index, {
+                    startDate,
+                    durationDays: durationDaysBetween(startDate, ev.endDate),
+                  });
+                }}
+              />
+            </Field>
+
+            <Field
+              label="Fecha de finalización del evento adverso"
+              error={errors[`events.${index}.endDate`]}
+              hint="No anterior al inicio ni a la fecha de nacimiento. Si aún no finalizó, dejar vacío"
+            >
+              <DateTriple
+                idPrefix={`ev-${index}-end`}
+                value={ev.endDate ?? ""}
+                hasError={Boolean(errors[`events.${index}.endDate`])}
+                onChange={(endDate) => {
+                  updateAt(index, {
+                    endDate,
+                    durationDays: durationDaysBetween(ev.startDate, endDate),
+                  });
+                }}
+              />
+            </Field>
+
+            <Field
+              label="Duración del evento adverso"
+              htmlFor={`ev-${index}-dur`}
+              hint="Días — se calcula automáticamente con las fechas de inicio y fin"
+            >
+              <UnitInput
+                id={`ev-${index}-dur`}
+                unit="días"
+                value={
+                  durationDaysBetween(ev.startDate, ev.endDate)?.toString() ??
+                  ""
                 }
-                updateAt(index, { isSerious: e.target.value === "si" });
-              }}
-            >
-              <option value="si">Sí</option>
-              <option value="no">No</option>
-            </SelectInput>
-          </Field>
+                readOnly
+                placeholder="Se calcula con inicio y fin"
+              />
+            </Field>
 
-          {ev.isSerious ? (
-            <>
+            <Field
+              label="Estado actual del evento adverso"
+              htmlFor={`ev-${index}-out`}
+            >
+              <SelectInput
+                id={`ev-${index}-out`}
+                value={ev.outcome ?? ""}
+                onChange={(e) =>
+                  updateAt(index, {
+                    outcome: e.target.value
+                      ? (e.target.value as AdverseEvent["outcome"])
+                      : undefined,
+                  })
+                }
+              >
+                {EVENT_OUTCOME_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </SelectInput>
+            </Field>
+
+            <Field
+              label="¿El evento adverso fue grave?"
+              htmlFor={`ev-${index}-grave`}
+              required
+              error={errors[`events.${index}.isSerious`]}
+            >
+              <SelectInput
+                id={`ev-${index}-grave`}
+                value={
+                  ev.isSerious === undefined ? "" : ev.isSerious ? "si" : "no"
+                }
+                hasError={Boolean(errors[`events.${index}.isSerious`])}
+                onChange={(e) => {
+                  if (!e.target.value) {
+                    updateAt(index, {
+                      isSerious: undefined,
+                      seriousnessCriterion: undefined,
+                    });
+                    return;
+                  }
+                  const isSerious = e.target.value === "si";
+                  updateAt(index, {
+                    isSerious,
+                    seriousnessCriterion: isSerious
+                      ? ev.seriousnessCriterion
+                      : undefined,
+                  });
+                }}
+              >
+                {YES_NO_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </SelectInput>
+            </Field>
+
+            {ev.isSerious ? (
               <Field
                 label="Indicador de gravedad"
+                htmlFor={`ev-${index}-ind`}
                 required
-                error={errors[`events.${index}.seriousnessCriteria`]}
+                error={errors[`events.${index}.seriousnessCriterion`]}
               >
-                <div className={fieldStyles.checkList}>
-                  {SERIOUSNESS_OPTIONS.map((o) => (
-                    <label key={o.value} className={fieldStyles.checkItem}>
-                      <input
-                        type="checkbox"
-                        checked={(ev.seriousnessCriteria ?? []).includes(
-                          o.value,
-                        )}
-                        onChange={(e) =>
-                          toggleCriterion(index, o.value, e.target.checked)
-                        }
-                      />
-                      {o.label}
-                    </label>
-                  ))}
-                </div>
-              </Field>
-
-              {(ev.seriousnessCriteria ?? []).includes(
-                "otra_condicion_medica",
-              ) ? (
-                <Field
-                  label="Especifique la otra condición médica importante"
-                  htmlFor={`ev-${index}-otra`}
-                  required
-                  error={errors[`events.${index}.otherSeriousCondition`]}
-                  hint="Complete solo si seleccionó la opción de otra condición médica importante"
+                <SelectInput
+                  id={`ev-${index}-ind`}
+                  value={ev.seriousnessCriterion ?? ""}
+                  hasError={Boolean(
+                    errors[`events.${index}.seriousnessCriterion`],
+                  )}
+                  onChange={(e) =>
+                    updateAt(index, {
+                      seriousnessCriterion: e.target.value
+                        ? (e.target.value as SeriousnessCriterion)
+                        : undefined,
+                    })
+                  }
                 >
-                  <TextInput
-                    id={`ev-${index}-otra`}
-                    value={ev.otherSeriousCondition ?? ""}
-                    hasError={Boolean(
-                      errors[`events.${index}.otherSeriousCondition`],
-                    )}
-                    onChange={(e) =>
-                      updateAt(index, {
-                        otherSeriousCondition: e.target.value,
-                      })
-                    }
-                  />
-                </Field>
-              ) : null}
-            </>
-          ) : null}
-
-          <Field
-            label="Clasificación de gravedad"
-            htmlFor={`ev-${index}-sev`}
-            hint="Leve, moderado, grave (clasificación OMS)"
-          >
-            <SelectInput
-              id={`ev-${index}-sev`}
-              value={ev.severityGrade ?? ""}
-              onChange={(e) =>
-                updateAt(index, {
-                  severityGrade: e.target.value
-                    ? (e.target.value as AdverseEvent["severityGrade"])
-                    : undefined,
-                })
-              }
-            >
-              {SEVERITY_GRADE_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </SelectInput>
-          </Field>
-
-          <Field
-            label="Relación causal"
-            htmlFor={`ev-${index}-caus`}
-            hint="Escala de Causalidad OMS-UMC"
-          >
-            <SelectInput
-              id={`ev-${index}-caus`}
-              value={ev.causality ?? ""}
-              onChange={(e) =>
-                updateAt(index, {
-                  causality: e.target.value
-                    ? (e.target.value as AdverseEvent["causality"])
-                    : undefined,
-                })
-              }
-            >
-              {CAUSALITY_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </SelectInput>
-          </Field>
-        </SubCard>
-      ))}
+                  {SERIOUSNESS_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </SelectInput>
+              </Field>
+            ) : null}
+          </SubCard>
+        );
+      })}
 
       <AddButton
         onClick={() =>
-          onChange((prev) => [...prev, createEmptyAdverseEvent()])
+          setEvents((prev) => [...prev, createEmptyAdverseEvent()])
         }
       >
-        Agregar otro evento adverso
+        Agregar otra reacción/síntoma
       </AddButton>
+
+      <Field
+        label="Clasificación de gravedad"
+        htmlFor="f-sev"
+        hint="Clasificación OMS"
+      >
+        <SelectInput
+          id="f-sev"
+          value={draft.severityGrade ?? ""}
+          onChange={(e) =>
+            onChange({
+              severityGrade: e.target.value
+                ? (e.target.value as SeverityGrade)
+                : undefined,
+            })
+          }
+        >
+          {SEVERITY_GRADE_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </SelectInput>
+      </Field>
+
+      <Field
+        label="Relación causal"
+        htmlFor="f-caus"
+        hint="Escala de Causalidad OMS-UMC"
+      >
+        <SelectInput
+          id="f-caus"
+          value={draft.causality ?? ""}
+          onChange={(e) =>
+            onChange({
+              causality: e.target.value
+                ? (e.target.value as Causality)
+                : undefined,
+            })
+          }
+        >
+          {CAUSALITY_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </SelectInput>
+      </Field>
     </>
   );
 }

@@ -8,14 +8,15 @@ import {
   AddButton,
   DateTriple,
   Field,
-  SearchableSelect,
+  SelectInput,
   SubCard,
   TextInput,
   UnitInput,
 } from "../FormFields";
 import fieldStyles from "../FormFields.module.css";
-import { CIE10_DEMO_OPTIONS } from "../options";
+import { YES_NO_OPTIONS } from "../options";
 import type { StepErrors } from "../validate";
+import { durationDaysBetween } from "../validate";
 
 type StepAdicionalProps = {
   draft: AdverseEventReportDraft;
@@ -30,10 +31,13 @@ function parseOptionalNumber(raw: string): number | undefined {
 }
 
 export function StepAdicional({ draft, errors, onChange }: StepAdicionalProps) {
-  const diseases = draft.diseases ?? [];
   const treatments = draft.concomitantTreatments ?? [];
+  const showTreatments = draft.hasConcomitantTreatments === true;
 
-  function updateTreatment(index: number, partial: Partial<ConcomitantTreatment>) {
+  function updateTreatment(
+    index: number,
+    partial: Partial<ConcomitantTreatment>,
+  ) {
     onChange({
       concomitantTreatments: treatments.map((t, i) =>
         i === index ? { ...t, ...partial } : t,
@@ -43,175 +47,223 @@ export function StepAdicional({ draft, errors, onChange }: StepAdicionalProps) {
 
   return (
     <>
-      <p
-        className={fieldStyles.hint}
-        style={{ fontSize: 14, color: "var(--color-text-secondary)" }}
+      <Field
+        label="Enfermedades previas o actuales"
+        htmlFor="f-enfermedades"
+        error={errors.previousDiseases}
       >
-        Enfermedades previas o actuales (CIE-10), tratamientos farmacológicos
-        concomitantes y comentarios adicionales.
-      </p>
+        <textarea
+          id="f-enfermedades"
+          className={fieldStyles.textarea}
+          value={draft.previousDiseases ?? ""}
+          maxLength={500}
+          rows={4}
+          onChange={(e) => onChange({ previousDiseases: e.target.value })}
+        />
+      </Field>
 
-      <h3 className={fieldStyles.subTitle}>Enfermedades previas o actuales</h3>
-      <p className={fieldStyles.hint}>
-        Lista desplegable según CIE-10 (módulo repetible)
-      </p>
-
-      {(diseases.length === 0 ? [""] : diseases).map((disease, index) => (
-        <Field
-          key={index}
-          label={index === 0 ? "Código CIE-10" : `Código CIE-10 (${index + 1})`}
-          htmlFor={`cie-${index}`}
-        >
-          <SearchableSelect
-            id={`cie-${index}`}
-            options={CIE10_DEMO_OPTIONS}
-            value={disease}
-            placeholder="Buscar código CIE-10..."
-            onChange={(next) => {
-              const list = diseases.length === 0 ? [""] : [...diseases];
-              list[index] = next;
-              onChange({ diseases: list });
-            }}
-          />
-        </Field>
-      ))}
-
-      <button
-        type="button"
-        className={fieldStyles.removeBtn}
-        onClick={() => {
-          const base = diseases.length === 0 ? [""] : diseases;
-          onChange({ diseases: [...base, ""] });
-        }}
+      <Field
+        label="Tratamientos farmacológicos concomitantes"
+        htmlFor="f-conc-si-no"
       >
-        Agregar otra enfermedad
-      </button>
-
-      <h3 className={fieldStyles.subTitle} style={{ marginTop: 8 }}>
-        Tratamientos farmacológicos concomitantes
-      </h3>
-
-      {treatments.map((t, index) => (
-        <SubCard
-          key={index}
-          title={`Tratamiento concomitante (${index + 1})`}
-          hint="Módulo repetible. Complete los datos de cada medicamento concomitante."
-          onRemove={() =>
+        <SelectInput
+          id="f-conc-si-no"
+          value={
+            draft.hasConcomitantTreatments === undefined
+              ? ""
+              : draft.hasConcomitantTreatments
+                ? "si"
+                : "no"
+          }
+          onChange={(e) => {
+            if (!e.target.value) {
+              onChange({ hasConcomitantTreatments: undefined });
+              return;
+            }
+            const yes = e.target.value === "si";
             onChange({
-              concomitantTreatments: treatments.filter((_, i) => i !== index),
+              hasConcomitantTreatments: yes,
+              concomitantTreatments: yes
+                ? treatments.length > 0
+                  ? treatments
+                  : [createEmptyConcomitantTreatment()]
+                : [],
+            });
+          }}
+        >
+          {YES_NO_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </SelectInput>
+      </Field>
+
+      {errors.concomitant ? (
+        <p className={fieldStyles.error}>{errors.concomitant}</p>
+      ) : null}
+
+      {showTreatments
+        ? treatments.map((t, index) => {
+            const computedDuration = durationDaysBetween(t.startDate, t.endDate);
+            const durationDisplay =
+              t.durationDays?.toString() ??
+              (computedDuration !== undefined
+                ? String(computedDuration)
+                : "");
+
+            return (
+              <SubCard
+                key={index}
+                title={`Nombre del medicamento (Módulo repetible)${
+                  treatments.length > 1 ? ` (${index + 1})` : ""
+                }`}
+                onRemove={
+                  treatments.length > 1
+                    ? () =>
+                        onChange({
+                          concomitantTreatments: treatments.filter(
+                            (_, i) => i !== index,
+                          ),
+                        })
+                    : undefined
+                }
+              >
+                <Field
+                  label="Nombre del medicamento (Módulo repetible)"
+                  htmlFor={`conc-${index}-name`}
+                  required
+                  error={errors[`concomitant.${index}.name`]}
+                >
+                  <TextInput
+                    id={`conc-${index}-name`}
+                    value={t.name}
+                    hasError={Boolean(errors[`concomitant.${index}.name`])}
+                    onChange={(e) =>
+                      updateTreatment(index, { name: e.target.value })
+                    }
+                  />
+                </Field>
+
+                <Field
+                  label="Posología (milígramos/toma)"
+                  htmlFor={`conc-${index}-mg`}
+                >
+                  <UnitInput
+                    id={`conc-${index}-mg`}
+                    unit="mg"
+                    value={t.mgPerDose?.toString() ?? ""}
+                    min={0}
+                    step="0.1"
+                    onChange={(v) =>
+                      updateTreatment(index, {
+                        mgPerDose: parseOptionalNumber(v),
+                      })
+                    }
+                  />
+                </Field>
+
+                <Field
+                  label="Posología (tomas/día)"
+                  htmlFor={`conc-${index}-tomas`}
+                >
+                  <TextInput
+                    id={`conc-${index}-tomas`}
+                    type="number"
+                    min={1}
+                    value={t.dosesPerDay?.toString() ?? ""}
+                    onChange={(e) =>
+                      updateTreatment(index, {
+                        dosesPerDay: parseOptionalNumber(e.target.value),
+                      })
+                    }
+                  />
+                </Field>
+
+                <Field
+                  label="Fecha de inicio de la administración del medicamento"
+                  required
+                  error={errors[`concomitant.${index}.startDate`]}
+                  hint="dd/mm/aaaa"
+                >
+                  <DateTriple
+                    idPrefix={`conc-${index}-start`}
+                    value={t.startDate}
+                    hasError={Boolean(errors[`concomitant.${index}.startDate`])}
+                    onChange={(startDate) => {
+                      const durationDays =
+                        durationDaysBetween(startDate, t.endDate) ??
+                        t.durationDays;
+                      updateTreatment(index, { startDate, durationDays });
+                    }}
+                  />
+                </Field>
+
+                <Field
+                  label="Fecha de fin de la administración del medicamento"
+                  error={errors[`concomitant.${index}.endDate`]}
+                  hint="En caso de aún no haber finalizado, no completar"
+                >
+                  <DateTriple
+                    idPrefix={`conc-${index}-end`}
+                    value={t.endDate ?? ""}
+                    hasError={Boolean(errors[`concomitant.${index}.endDate`])}
+                    onChange={(endDate) => {
+                      const durationDays =
+                        durationDaysBetween(t.startDate, endDate) ??
+                        t.durationDays;
+                      updateTreatment(index, { endDate, durationDays });
+                    }}
+                  />
+                </Field>
+
+                <Field
+                  label="Duración del uso del medicamento concomitante"
+                  htmlFor={`conc-${index}-dur`}
+                  hint="Días — se calcula a partir de las fechas de inicio y fin"
+                >
+                  <UnitInput
+                    id={`conc-${index}-dur`}
+                    unit="días"
+                    value={durationDisplay}
+                    min={1}
+                    onChange={(v) =>
+                      updateTreatment(index, {
+                        durationDays: parseOptionalNumber(v),
+                      })
+                    }
+                  />
+                </Field>
+              </SubCard>
+            );
+          })
+        : null}
+
+      {showTreatments ? (
+        <AddButton
+          onClick={() =>
+            onChange({
+              concomitantTreatments: [
+                ...treatments,
+                createEmptyConcomitantTreatment(),
+              ],
             })
           }
         >
-          <Field
-            label="Nombre del medicamento"
-            htmlFor={`conc-${index}-name`}
-            required={Boolean(t.name || t.startDate)}
-            error={errors[`concomitant.${index}.name`]}
-          >
-            <TextInput
-              id={`conc-${index}-name`}
-              value={t.name}
-              hasError={Boolean(errors[`concomitant.${index}.name`])}
-              onChange={(e) => updateTreatment(index, { name: e.target.value })}
-            />
-          </Field>
+          Agregar otro medicamento
+        </AddButton>
+      ) : null}
 
-          <Field label="Posología — Nº mg por toma" htmlFor={`conc-${index}-mg`}>
-            <TextInput
-              id={`conc-${index}-mg`}
-              type="number"
-              min={0}
-              value={t.mgPerDose?.toString() ?? ""}
-              onChange={(e) =>
-                updateTreatment(index, {
-                  mgPerDose: parseOptionalNumber(e.target.value),
-                })
-              }
-            />
-          </Field>
-
-          <Field
-            label="Posología — Nº tomas por día"
-            htmlFor={`conc-${index}-tomas`}
-          >
-            <TextInput
-              id={`conc-${index}-tomas`}
-              type="number"
-              min={0}
-              value={t.dosesPerDay?.toString() ?? ""}
-              onChange={(e) =>
-                updateTreatment(index, {
-                  dosesPerDay: parseOptionalNumber(e.target.value),
-                })
-              }
-            />
-          </Field>
-
-          <Field
-            label="Fecha de inicio de la administración"
-            required={Boolean(t.name || t.startDate)}
-            error={errors[`concomitant.${index}.startDate`]}
-            hint="Formato dd/mm/aaaa — año entre 1900 y 2100"
-          >
-            <DateTriple
-              idPrefix={`conc-${index}-start`}
-              value={t.startDate}
-              hasError={Boolean(errors[`concomitant.${index}.startDate`])}
-              onChange={(startDate) => updateTreatment(index, { startDate })}
-            />
-          </Field>
-
-          <Field
-            label="Fecha de fin de la administración"
-            error={errors[`concomitant.${index}.endDate`]}
-            hint="En caso de aún no haber finalizado, no completar"
-          >
-            <DateTriple
-              idPrefix={`conc-${index}-end`}
-              value={t.endDate ?? ""}
-              hasError={Boolean(errors[`concomitant.${index}.endDate`])}
-              onChange={(endDate) => updateTreatment(index, { endDate })}
-            />
-          </Field>
-
-          <Field
-            label="Duración del uso del medicamento concomitante"
-            htmlFor={`conc-${index}-dur`}
-            hint="Tiempo de uso del medicamento concomitante"
-          >
-            <UnitInput
-              id={`conc-${index}-dur`}
-              unit="días"
-              value={t.durationDays?.toString() ?? ""}
-              min={0}
-              onChange={(v) =>
-                updateTreatment(index, {
-                  durationDays: parseOptionalNumber(v),
-                })
-              }
-            />
-          </Field>
-        </SubCard>
-      ))}
-
-      <AddButton
-        onClick={() =>
-          onChange({
-            concomitantTreatments: [
-              ...treatments,
-              createEmptyConcomitantTreatment(),
-            ],
-          })
-        }
+      <Field
+        label="Comentarios adicionales"
+        htmlFor="f-comments"
+        error={errors.additionalComments}
       >
-        Agregar otro tratamiento
-      </AddButton>
-
-      <Field label="Comentarios adicionales" htmlFor="f-comments">
         <textarea
           id="f-comments"
           className={fieldStyles.textarea}
           value={draft.additionalComments ?? ""}
+          maxLength={500}
           rows={4}
           onChange={(e) => onChange({ additionalComments: e.target.value })}
         />

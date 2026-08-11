@@ -19,10 +19,16 @@ export function StepContacto({ draft, errors, onChange }: StepContactoProps) {
 
   return (
     <>
-      <Field label="Área reportante" htmlFor="f-area">
+      <Field
+        label="Área Reportante"
+        htmlFor="f-area"
+        error={errors.reportingArea}
+      >
         <TextInput
           id="f-area"
           value={c.reportingArea ?? ""}
+          maxLength={500}
+          hasError={Boolean(errors.reportingArea)}
           onChange={(e) => patch({ reportingArea: e.target.value })}
         />
       </Field>
@@ -53,26 +59,36 @@ export function StepContacto({ draft, errors, onChange }: StepContactoProps) {
         </SelectInput>
       </Field>
 
-      <Field label="Nombre/s" htmlFor="f-nombre">
+      <Field label="Nombre(s)" htmlFor="f-nombre" error={errors.firstName}>
         <TextInput
           id="f-nombre"
           value={c.firstName ?? ""}
+          maxLength={50}
+          hasError={Boolean(errors.firstName)}
           onChange={(e) => patch({ firstName: e.target.value })}
         />
       </Field>
 
-      <Field label="Apellido/s" htmlFor="f-apellido">
+      <Field label="Apellidos(s)" htmlFor="f-apellido" error={errors.lastName}>
         <TextInput
           id="f-apellido"
           value={c.lastName ?? ""}
+          maxLength={50}
+          hasError={Boolean(errors.lastName)}
           onChange={(e) => patch({ lastName: e.target.value })}
         />
       </Field>
 
-      <Field label="Establecimiento de Salud" htmlFor="f-estab">
+      <Field
+        label="Establecimiento de Salud"
+        htmlFor="f-estab"
+        error={errors.healthFacility}
+      >
         <TextInput
           id="f-estab"
           value={c.healthFacility ?? ""}
+          maxLength={100}
+          hasError={Boolean(errors.healthFacility)}
           onChange={(e) => patch({ healthFacility: e.target.value })}
         />
       </Field>
@@ -82,7 +98,6 @@ export function StepContacto({ draft, errors, onChange }: StepContactoProps) {
         htmlFor="f-email"
         required
         error={errors.email}
-        hint="Formato de email válido"
       >
         <TextInput
           id="f-email"
@@ -90,7 +105,6 @@ export function StepContacto({ draft, errors, onChange }: StepContactoProps) {
           value={c.email}
           hasError={Boolean(errors.email)}
           autoComplete="email"
-          placeholder="nombre@ejemplo.com"
           onChange={(e) => patch({ email: e.target.value })}
         />
       </Field>
@@ -100,7 +114,6 @@ export function StepContacto({ draft, errors, onChange }: StepContactoProps) {
         htmlFor="f-tel"
         required
         error={errors.phone}
-        hint="Uruguay: móvil 09X XXX XXX o fijo (ej. 2XXX XXXX) · también +598…"
       >
         <TextInput
           id="f-tel"
@@ -108,7 +121,6 @@ export function StepContacto({ draft, errors, onChange }: StepContactoProps) {
           value={c.phone}
           hasError={Boolean(errors.phone)}
           autoComplete="tel"
-          placeholder="099 123 456"
           onChange={(e) => patch({ phone: e.target.value })}
         />
       </Field>

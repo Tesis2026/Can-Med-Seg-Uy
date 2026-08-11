@@ -46,9 +46,40 @@ function assertRangeOrder(
   }
 }
 
+/** La fecha no puede ser anterior a la fecha de nacimiento. */
+function assertNotBeforeBirth(
+  errors: StepErrors,
+  key: string,
+  value: string | undefined,
+  birthDate: string | undefined,
+) {
+  if (errors[key]) return;
+  const date = value ? parseToDate(value) : null;
+  const birth = birthDate ? parseToDate(birthDate) : null;
+  if (date && birth && date.getTime() < birth.getTime()) {
+    errors[key] = "No puede ser anterior a la fecha de nacimiento";
+  }
+}
+
 function startOfToday(): Date {
   const t = new Date();
   return new Date(t.getFullYear(), t.getMonth(), t.getDate());
+}
+
+/**
+ * Duración en días entre inicio y fin (mismo día = 0).
+ * Solo se calcula si ambas fechas son válidas y fin ≥ inicio.
+ */
+export function durationDaysBetween(
+  startValue: string | undefined,
+  endValue: string | undefined,
+): number | undefined {
+  const start = startValue ? parseToDate(startValue) : null;
+  const end = endValue ? parseToDate(endValue) : null;
+  if (!start || !end) return undefined;
+  const ms = end.getTime() - start.getTime();
+  if (ms < 0) return undefined;
+  return Math.floor(ms / (1000 * 60 * 60 * 24));
 }
 
 export function validateStep(
@@ -56,7 +87,6 @@ export function validateStep(
   draft: AdverseEventReportDraft,
 ): StepErrors {
   const errors: StepErrors = {};
-  const today = startOfToday();
 
   if (step === 1) {
     const p = draft.patient;
@@ -76,14 +106,8 @@ export function validateStep(
     if (hMsg) errors.heightM = hMsg;
 
     requireDate(errors, "birthDate", p.birthDate);
-    if (!errors.birthDate) {
-      const birth = parseToDate(p.birthDate);
-      if (birth && birth.getTime() > today.getTime()) {
-        errors.birthDate = "La fecha de nacimiento no puede ser futura";
-      }
-    }
 
-    const ageMsg = ageError(p.ageAtEventStart, true);
+    const ageMsg = ageError(p.ageAtEventStart, false);
     if (ageMsg) errors.ageAtEventStart = ageMsg;
 
     if (!p.countryOfEventStart.trim()) {
@@ -92,24 +116,34 @@ export function validateStep(
   }
 
   if (step === 2) {
+    if (!draft.adverseEventDescription.trim()) {
+      errors.adverseEventDescription = "Campo obligatorio";
+    } else if (draft.adverseEventDescription.length > 500) {
+      errors.adverseEventDescription = "Máximo 500 caracteres";
+    }
+
     if (draft.events.length === 0) {
-      errors.events = "Agregue al menos un evento adverso";
+      errors.events = "Agregue al menos una reacción/síntoma";
     }
     draft.events.forEach((ev, i) => {
-      if (!ev.description.trim()) {
-        errors[`events.${i}.description`] = "Campo obligatorio";
+      if (!ev.meddraTerm.trim()) {
+        errors[`events.${i}.meddraTerm`] = "Campo obligatorio";
       }
 
       requireDate(errors, `events.${i}.startDate`, ev.startDate);
-      if (!errors[`events.${i}.startDate`]) {
-        const start = parseToDate(ev.startDate);
-        if (start && start.getTime() > today.getTime()) {
-          errors[`events.${i}.startDate`] =
-            "La fecha de inicio no puede ser futura";
-        }
-      }
-
       optionalDate(errors, `events.${i}.endDate`, ev.endDate);
+      assertNotBeforeBirth(
+        errors,
+        `events.${i}.startDate`,
+        ev.startDate,
+        draft.patient.birthDate,
+      );
+      assertNotBeforeBirth(
+        errors,
+        `events.${i}.endDate`,
+        ev.endDate,
+        draft.patient.birthDate,
+      );
       assertRangeOrder(
         errors,
         `events.${i}.startDate`,
@@ -118,32 +152,12 @@ export function validateStep(
         ev.endDate,
       );
 
-      if (
-        ev.durationDays !== undefined &&
-        (!Number.isFinite(ev.durationDays) ||
-          ev.durationDays < 0 ||
-          ev.durationDays > 36500)
-      ) {
-        errors[`events.${i}.durationDays`] = "Duración inválida";
-      }
-
       if (ev.isSerious === undefined) {
         errors[`events.${i}.isSerious`] = "Campo obligatorio";
       }
-      if (
-        ev.isSerious &&
-        (!ev.seriousnessCriteria || ev.seriousnessCriteria.length === 0)
-      ) {
-        errors[`events.${i}.seriousnessCriteria`] =
-          "Seleccione al menos un indicador de gravedad";
-      }
-      if (
-        ev.isSerious &&
-        ev.seriousnessCriteria.includes("otra_condicion_medica") &&
-        !ev.otherSeriousCondition?.trim()
-      ) {
-        errors[`events.${i}.otherSeriousCondition`] =
-          "Especifique la otra condición médica";
+      if (ev.isSerious && !ev.seriousnessCriterion) {
+        errors[`events.${i}.seriousnessCriterion`] =
+          "Seleccione el indicador de gravedad";
       }
     });
   }
@@ -156,22 +170,28 @@ export function validateStep(
       if (!m.name.trim()) {
         errors[`medicines.${i}.name`] = "Campo obligatorio";
       }
-      requireDate(
+
+      optionalDate(
         errors,
         `medicines.${i}.administrationStartDate`,
         m.administrationStartDate,
       );
-      if (!errors[`medicines.${i}.administrationStartDate`]) {
-        const start = parseToDate(m.administrationStartDate);
-        if (start && start.getTime() > today.getTime()) {
-          errors[`medicines.${i}.administrationStartDate`] =
-            "La fecha de inicio no puede ser futura";
-        }
-      }
       optionalDate(
         errors,
         `medicines.${i}.administrationEndDate`,
         m.administrationEndDate,
+      );
+      assertNotBeforeBirth(
+        errors,
+        `medicines.${i}.administrationStartDate`,
+        m.administrationStartDate,
+        draft.patient.birthDate,
+      );
+      assertNotBeforeBirth(
+        errors,
+        `medicines.${i}.administrationEndDate`,
+        m.administrationEndDate,
+        draft.patient.birthDate,
       );
       assertRangeOrder(
         errors,
@@ -182,14 +202,23 @@ export function validateStep(
       );
 
       for (const [key, label] of [
-        ["thcMg", "THC"],
-        ["cbdMg", "CBD"],
-        ["otherCompositionMg", "Otros"],
+        ["thcPercent", "THC"],
+        ["cbdPercent", "CBD"],
+        ["otherPercent", "Otro"],
       ] as const) {
         const v = m[key];
-        if (v !== undefined && (!Number.isFinite(v) || v < 0 || v > 100000)) {
-          errors[`medicines.${i}.${key}`] = `${label}: valor numérico inválido`;
+        if (v !== undefined && (!Number.isFinite(v) || v < 0 || v > 100)) {
+          errors[`medicines.${i}.${key}`] =
+            `${label}: valor entre 0 y 100 (%)`;
         }
+      }
+
+      if (
+        m.recentProductChangeDetail &&
+        m.recentProductChangeDetail.length > 100
+      ) {
+        errors[`medicines.${i}.recentProductChangeDetail`] =
+          "Máximo 100 caracteres";
       }
 
       if (
@@ -197,14 +226,31 @@ export function validateStep(
         !m.recentProductChangeDetail?.trim()
       ) {
         errors[`medicines.${i}.recentProductChangeDetail`] =
-          "Especifique marca, dosis y/o presentación";
+          "Especifique el cambio reciente de producto";
       }
     });
   }
 
   if (step === 4) {
-    draft.concomitantTreatments.forEach((t, i) => {
-      if (t.name.trim() || t.startDate) {
+    if (
+      draft.previousDiseases &&
+      draft.previousDiseases.length > 500
+    ) {
+      errors.previousDiseases = "Máximo 500 caracteres";
+    }
+
+    if (
+      draft.additionalComments &&
+      draft.additionalComments.length > 500
+    ) {
+      errors.additionalComments = "Máximo 500 caracteres";
+    }
+
+    if (draft.hasConcomitantTreatments === true) {
+      if (draft.concomitantTreatments.length === 0) {
+        errors.concomitant = "Agregue al menos un medicamento concomitante";
+      }
+      draft.concomitantTreatments.forEach((t, i) => {
         if (!t.name.trim()) {
           errors[`concomitant.${i}.name`] = "Campo obligatorio";
         }
@@ -217,13 +263,26 @@ export function validateStep(
           t.startDate,
           t.endDate,
         );
-      }
-    });
+      });
+    }
   }
 
   if (step === 5) {
     const c = draft.contact;
     if (!c.profession) errors.profession = "Campo obligatorio";
+
+    if (c.reportingArea && c.reportingArea.length > 500) {
+      errors.reportingArea = "Máximo 500 caracteres";
+    }
+    if (c.firstName && c.firstName.length > 50) {
+      errors.firstName = "Máximo 50 caracteres";
+    }
+    if (c.lastName && c.lastName.length > 50) {
+      errors.lastName = "Máximo 50 caracteres";
+    }
+    if (c.healthFacility && c.healthFacility.length > 100) {
+      errors.healthFacility = "Máximo 100 caracteres";
+    }
 
     const mailMsg = emailError(c.email, true);
     if (mailMsg) errors.email = mailMsg;
@@ -243,4 +302,63 @@ export function computeBmi(
   const bmi = weightKg / (heightM * heightM);
   if (!Number.isFinite(bmi)) return "";
   return bmi.toFixed(1);
+}
+
+/** Años cumplidos entre fecha de nacimiento y una fecha de referencia. */
+export function computeAgeYears(
+  birthDateValue: string | undefined,
+  referenceDateValue?: string | undefined,
+): number | undefined {
+  const birth = birthDateValue ? parseToDate(birthDateValue) : null;
+  if (!birth) return undefined;
+
+  let reference: Date;
+  if (referenceDateValue) {
+    const parsed = parseToDate(referenceDateValue);
+    if (!parsed) return undefined;
+    reference = parsed;
+  } else {
+    reference = startOfToday();
+  }
+
+  if (reference.getTime() < birth.getTime()) return undefined;
+
+  let age = reference.getFullYear() - birth.getFullYear();
+  const monthDiff = reference.getMonth() - birth.getMonth();
+  if (
+    monthDiff < 0 ||
+    (monthDiff === 0 && reference.getDate() < birth.getDate())
+  ) {
+    age -= 1;
+  }
+  if (age < 0 || age > 120) return undefined;
+  return age;
+}
+
+/** Fecha de inicio de evento más temprana entre las reacciones, si hay. */
+export function earliestEventStartDate(
+  draft: AdverseEventReportDraft,
+): string | undefined {
+  let earliest: Date | null = null;
+  let earliestRaw: string | undefined;
+  for (const ev of draft.events) {
+    if (!ev.startDate?.trim()) continue;
+    const d = parseToDate(ev.startDate);
+    if (!d) continue;
+    if (!earliest || d.getTime() < earliest.getTime()) {
+      earliest = d;
+      earliestRaw = ev.startDate;
+    }
+  }
+  return earliestRaw;
+}
+
+/** Edad al comienzo del evento: nacimiento + inicio de evento (o hoy si aún no hay). */
+export function computeAgeAtEventStart(
+  draft: AdverseEventReportDraft,
+): number | undefined {
+  return computeAgeYears(
+    draft.patient.birthDate,
+    earliestEventStartDate(draft),
+  );
 }

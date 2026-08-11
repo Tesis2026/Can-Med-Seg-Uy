@@ -9,7 +9,12 @@ import {
 } from "../FormFields";
 import { COUNTRY_OPTIONS, SEX_OPTIONS } from "../options";
 import type { StepErrors } from "../validate";
-import { computeBmi } from "../validate";
+import {
+  computeAgeAtEventStart,
+  computeAgeYears,
+  computeBmi,
+  earliestEventStartDate,
+} from "../validate";
 
 type StepPacienteProps = {
   draft: AdverseEventReportDraft;
@@ -26,6 +31,10 @@ function parseOptionalNumber(raw: string): number | undefined {
 export function StepPaciente({ draft, errors, onChange }: StepPacienteProps) {
   const p = draft.patient;
   const bmi = computeBmi(p.weightKg, p.heightM);
+  const ageDisplay =
+    p.ageAtEventStart?.toString() ??
+    computeAgeAtEventStart(draft)?.toString() ??
+    "";
 
   function patch(partial: Partial<Patient>) {
     onChange({ ...p, ...partial });
@@ -33,28 +42,28 @@ export function StepPaciente({ draft, errors, onChange }: StepPacienteProps) {
 
   return (
     <>
-      <Field label="Iniciales" htmlFor="f-initials" required error={errors.initials}>
+      <Field
+        label="Iniciales"
+        htmlFor="f-initials"
+        required
+        error={errors.initials}
+      >
         <TextInput
           id="f-initials"
           value={p.initials}
+          maxLength={4}
           hasError={Boolean(errors.initials)}
           onChange={(e) => patch({ initials: e.target.value })}
           autoComplete="off"
         />
       </Field>
 
-      <Field
-        label="Número de Cédula"
-        htmlFor="f-cedula"
-        error={errors.nationalId}
-        hint="Opcional — cédula uruguaya con dígito verificador"
-      >
+      <Field label="Número de cédula" htmlFor="f-cedula" error={errors.nationalId}>
         <TextInput
           id="f-cedula"
           value={p.nationalId ?? ""}
           inputMode="numeric"
           hasError={Boolean(errors.nationalId)}
-          placeholder="Ej. 12345678"
           onChange={(e) => patch({ nationalId: e.target.value })}
         />
       </Field>
@@ -80,11 +89,7 @@ export function StepPaciente({ draft, errors, onChange }: StepPacienteProps) {
         </SelectInput>
       </Field>
 
-      <Field
-        label="Peso (Kg)"
-        htmlFor="f-peso"
-        error={errors.weightKg}
-      >
+      <Field label="Peso" htmlFor="f-peso" error={errors.weightKg}>
         <UnitInput
           id="f-peso"
           unit="kg"
@@ -96,11 +101,7 @@ export function StepPaciente({ draft, errors, onChange }: StepPacienteProps) {
         />
       </Field>
 
-      <Field
-        label="Talla (m)"
-        htmlFor="f-talla"
-        error={errors.heightM}
-      >
+      <Field label="Talla" htmlFor="f-talla" error={errors.heightM}>
         <UnitInput
           id="f-talla"
           unit="m"
@@ -115,13 +116,13 @@ export function StepPaciente({ draft, errors, onChange }: StepPacienteProps) {
       <Field
         label="Índice de masa corporal"
         htmlFor="f-imc"
-        hint="kg/m² — puede calcularse a partir de peso y talla"
+        hint="kg/m² — se calcula a partir de peso y talla"
       >
         <TextInput
           id="f-imc"
           value={bmi}
           readOnly
-          placeholder="kg/m² — puede calcularse a partir de peso y talla"
+          placeholder="Se calcula a partir de peso y talla"
         />
       </Field>
 
@@ -129,41 +130,40 @@ export function StepPaciente({ draft, errors, onChange }: StepPacienteProps) {
         label="Fecha de nacimiento"
         required
         error={errors.birthDate}
-        hint="Formato dd/mm/aaaa — año entre 1900 y 2100"
+        hint="dd/mm/aaaa — desde 1900 hasta hoy"
       >
         <DateTriple
           idPrefix="f-birth"
           value={p.birthDate}
           hasError={Boolean(errors.birthDate)}
-          onChange={(birthDate) => patch({ birthDate })}
+          onChange={(birthDate) => {
+            const eventStart = earliestEventStartDate(draft);
+            patch({
+              birthDate,
+              ageAtEventStart: computeAgeYears(birthDate, eventStart),
+            });
+          }}
         />
       </Field>
 
       <Field
         label="Edad al comienzo del evento adverso"
         htmlFor="f-edad"
-        required
-        error={errors.ageAtEventStart}
-        hint="Campo obligatorio"
+        hint="Años — se calcula a partir de la fecha de nacimiento (y la fecha de inicio del evento, si ya está cargada)"
       >
         <TextInput
           id="f-edad"
-          type="number"
-          min={0}
-          value={p.ageAtEventStart?.toString() ?? ""}
-          hasError={Boolean(errors.ageAtEventStart)}
-          onChange={(e) =>
-            patch({ ageAtEventStart: parseOptionalNumber(e.target.value) })
-          }
+          value={ageDisplay}
+          readOnly
+          placeholder="Se calcula a partir de la fecha de nacimiento"
         />
       </Field>
 
       <Field
-        label="País donde comenzó el evento adverso"
+        label="País en donde comenzó el evento adverso"
         htmlFor="f-pais"
         required
         error={errors.countryOfEventStart}
-        hint="Campo obligatorio"
       >
         <SelectInput
           id="f-pais"

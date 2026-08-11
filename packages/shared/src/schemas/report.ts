@@ -3,44 +3,66 @@ import { z } from "zod";
 import { REPORT_STATUSES, ReportStatus } from "../enums/report-status";
 import type { ReportStatus as ReportStatusType } from "../enums/report-status";
 
+/**
+ * Esquema del formulario de notificación alineado a:
+ * documentacion/v2_Diccionario de variables-revisado.xlsx
+ *
+ * Los nombres de UI deben coincidir con la columna «Nombre» del diccionario
+ * (sin el marcador (*) de obligatoriedad ni notas (??)).
+ */
+
 const reportStatusEnum = z.enum(
   REPORT_STATUSES as [ReportStatusType, ...ReportStatusType[]],
 );
 
-/** Sección 1 — Datos del paciente (estado de formulario cliente). */
+/** Sección — Información general del paciente (vars. 1–9). */
 export const patientSchema = z.object({
+  /** 1.0 Iniciales(*) — máx. 4 caracteres. */
   initials: z.string().default(""),
+  /** 2.0 Número de cédula. */
   nationalId: z.string().optional().default(""),
+  /** 3.0 Sexo(*). */
   sex: z.enum(["femenino", "masculino", "otro", "prefiere_no_responder"]).optional(),
+  /** 4.0 Peso (kg). */
   weightKg: z.number().positive().optional(),
+  /** 5.0 Talla (m). */
   heightM: z.number().positive().optional(),
-  /** Fecha de nacimiento como dd/mm/aaaa (texto de formulario). */
+  /** 7.0 Fecha de nacimiento(*) — dd/mm/aaaa. */
   birthDate: z.string().default(""),
+  /** 8.0 Edad al comienzo del evento adverso (años). */
   ageAtEventStart: z.number().int().nonnegative().optional(),
+  /** 9.0 País en donde comenzó el evento adverso(*). */
   countryOfEventStart: z.string().default("Uruguay"),
 });
 
 export type Patient = z.infer<typeof patientSchema>;
 
+/** 17.0 Indicador de gravedad (criterio único). */
 export const seriousnessCriterionSchema = z.enum([
-  "amenaza_vida",
   "muerte",
-  "hospitalizacion",
+  "amenaza_vida",
   "discapacidad",
+  "hospitalizacion",
   "malformacion_congenita",
   "otra_condicion_medica",
 ]);
 
 export type SeriousnessCriterion = z.infer<typeof seriousnessCriterionSchema>;
 
-/** Sección 2 — Evento adverso (módulo repetible). */
+/**
+ * Módulo repetible vars. 11–17 (Reacción/Síntoma … Indicador de gravedad).
+ * La var. 10 (Evento adverso) y 18–19 viven a nivel de borrador.
+ */
 export const adverseEventSchema = z.object({
-  /** Término MedDRA (búsqueda UI; mock en demo). */
-  meddraTerm: z.string().optional().default(""),
-  description: z.string().default(""),
+  /** 11.0 Reacción/Síntoma(*) — término MedDRA. */
+  meddraTerm: z.string().default(""),
+  /** 12.0 Fecha de inicio del evento adverso(*). */
   startDate: z.string().default(""),
+  /** 13.0 Fecha de finalización del evento adverso. */
   endDate: z.string().optional().default(""),
-  durationDays: z.number().nonnegative().optional(),
+  /** 14.0 Duración — operacionalización (días); se calcula desde inicio/fin. */
+  durationDays: z.number().int().nonnegative().optional(),
+  /** 15.0 Estado actual del evento adverso. */
   outcome: z
     .enum([
       "recuperada_resuelta",
@@ -51,32 +73,38 @@ export const adverseEventSchema = z.object({
       "desconocido",
     ])
     .optional(),
+  /** 16.0 ¿El evento adverso fue grave?(*). */
   isSerious: z.boolean().optional(),
-  seriousnessCriteria: z.array(seriousnessCriterionSchema).default([]),
-  otherSeriousCondition: z.string().optional().default(""),
-  /** Clasificación OMS: leve / moderado / grave. */
-  severityGrade: z.enum(["leve", "moderado", "grave"]).optional(),
-  /** Escala de causalidad OMS-UMC. */
-  causality: z
-    .enum([
-      "cierta",
-      "probable",
-      "posible",
-      "improbable",
-      "condicional",
-      "no_clasificable",
-      "no_evaluable",
-    ])
-    .optional(),
+  /** 17.0 Indicador de gravedad. */
+  seriousnessCriterion: seriousnessCriterionSchema.optional(),
 });
 
 export type AdverseEvent = z.infer<typeof adverseEventSchema>;
 
-/** Sección 3 — Medicamento implicado (módulo repetible). */
+/** 18.0 Clasificación de gravedad (OMS). */
+export const severityGradeSchema = z.enum(["leve", "moderado", "severo"]);
+export type SeverityGrade = z.infer<typeof severityGradeSchema>;
+
+/** 19.0 Relación causal (OMS-UMC). */
+export const causalitySchema = z.enum([
+  "cierta",
+  "probable",
+  "posible",
+  "improbable",
+  "condicional",
+  "no_evaluable",
+]);
+export type Causality = z.infer<typeof causalitySchema>;
+
+/** Sección — Medicamento implicado (vars. 20–41). */
 export const medicineSchema = z.object({
+  /** 20.0 Nombre del medicamento(*). */
   name: z.string().default(""),
+  /** 21.0 Compañía farmacéutica productora/distribuidora del medicamento. */
   company: z.string().optional().default(""),
+  /** 22.0 Número de lote. */
   batchNumber: z.string().optional().default(""),
+  /** 23.0 Forma de acceso. */
   accessForm: z
     .enum([
       "farmacia_comunitaria",
@@ -85,31 +113,59 @@ export const medicineSchema = z.object({
       "otra",
     ])
     .optional(),
-  presentation: z.enum(["solucion_oral", "aceite", "sustancia_vegetal"]).optional(),
-  thcMg: z.number().nonnegative().optional(),
-  cbdMg: z.number().nonnegative().optional(),
-  otherCompositionMg: z.number().nonnegative().optional(),
-  /** Nombre de archivo local (demo; sin upload real). */
+  /** 24.0 Tipo de presentación. */
+  presentation: z
+    .enum(["solucion_oral", "aceite", "sustancia_vegetal", "uso_topico"])
+    .optional(),
+  /** 25.0 Dosis — texto libre. */
+  dose: z.string().optional().default(""),
+  /** 26.0 Imagen del envase — nombre de archivo (demo). */
   packageImageName: z.string().optional().default(""),
-  dropsPerDose: z.number().nonnegative().optional(),
-  dosesPerDay: z.number().nonnegative().optional(),
+  /** 27.0 Dosis/presentación (THC) — %. */
+  thcPercent: z.number().min(0).max(100).optional(),
+  /** 28.0 Dosis/presentación (CBD) — %. */
+  cbdPercent: z.number().min(0).max(100).optional(),
+  /** 29.0 Dosis/presentación (Otro) — %. */
+  otherPercent: z.number().min(0).max(100).optional(),
+  /** 30.0 Posología (veces al día). */
+  dosesPerDay: z.number().int().positive().optional(),
+  /** 31.0 Posología (cantidad por cada vez) — gotas. */
+  amountPerDose: z.number().int().positive().optional(),
+  /**
+   * 32–33.0 Vía de administración.
+   * Se usa la lista completa (var. 33); una sola vía en el formulario.
+   */
   administrationRoute: z
     .enum([
-      "oral",
-      "sublingual",
       "topico",
+      "oral",
       "respiratoria",
-      "fumada",
-      "otra",
-      "desconocida",
+      "sublingual",
+      "desconocido",
+      "intramuscular",
+      "intravenosa",
+      "nasal",
+      "oftalmica",
+      "otros",
+      "rectal",
+      "subcutanea",
+      "vaginal",
     ])
     .optional(),
-  administrationStartDate: z.string().default(""),
+  /** 34.0 Fecha de inicio de la administración del medicamento. */
+  administrationStartDate: z.string().optional().default(""),
+  /** 35.0 Fecha de fin de la administración del medicamento. */
   administrationEndDate: z.string().optional().default(""),
-  administrationDurationDays: z.number().nonnegative().optional(),
+  /** 36.0 Duración de la administración — operacionalización (días). */
+  administrationDurationDays: z.number().int().nonnegative().optional(),
+  /** 37.0 Cambio reciente de producto. */
   recentProductChange: z.boolean().optional(),
+  /** 38.0 Cambio reciente de producto-Especificar — máx. 100. */
   recentProductChangeDetail: z.string().optional().default(""),
-  mainIndication: z
+  /** 39.0 Indicación … (texto libre). */
+  indicationText: z.string().optional().default(""),
+  /** 40.0 Indicación … (lista). */
+  indicationCategory: z
     .enum([
       "epilepsia_refractaria",
       "dolor_oncologico",
@@ -122,6 +178,7 @@ export const medicineSchema = z.object({
       "anorexia_caquexia",
     ])
     .optional(),
+  /** 41.0 Acción tomada con el medicamento. */
   actionTaken: z
     .enum([
       "retirado",
@@ -137,21 +194,29 @@ export const medicineSchema = z.object({
 
 export type Medicine = z.infer<typeof medicineSchema>;
 
-/** Sección 4 — Tratamiento concomitante (módulo repetible). */
+/** Módulo repetible vars. 44–49 (cuando 43 = Sí). */
 export const concomitantTreatmentSchema = z.object({
+  /** 44.0 Nombre del medicamento (Módulo repetible). */
   name: z.string().default(""),
-  mgPerDose: z.number().nonnegative().optional(),
-  dosesPerDay: z.number().nonnegative().optional(),
+  /** 45.0 Posología (milígramos/toma). */
+  mgPerDose: z.number().positive().optional(),
+  /** 46.0 Posología (tomas/día). */
+  dosesPerDay: z.number().int().positive().optional(),
+  /** 47.0 Fecha de inicio de la administración del medicamento(*). */
   startDate: z.string().default(""),
+  /** 48.0 Fecha de fin de la administración del medicamento. */
   endDate: z.string().optional().default(""),
-  durationDays: z.number().nonnegative().optional(),
+  /** 49.0 Duración del uso del medicamento concomitante. */
+  durationDays: z.number().int().positive().optional(),
 });
 
 export type ConcomitantTreatment = z.infer<typeof concomitantTreatmentSchema>;
 
-/** Sección 5 — Contacto del notificador. */
+/** Sección — Información de contacto (vars. 1–7 del bloque contacto). */
 export const contactSchema = z.object({
+  /** 1.0 Área Reportante — máx. 500. */
   reportingArea: z.string().optional().default(""),
+  /** 2.0 Profesión(*). */
   profession: z
     .enum([
       "medico",
@@ -162,11 +227,17 @@ export const contactSchema = z.object({
       "otro_no_sanitario",
     ])
     .optional(),
+  /** 3.0 Nombre(s) — máx. 50. */
   firstName: z.string().optional().default(""),
+  /** 4.0 Apellidos(s) — máx. 50. */
   lastName: z.string().optional().default(""),
+  /** 5.0 Establecimiento de Salud — máx. 100. */
   healthFacility: z.string().optional().default(""),
+  /** 6.0 Correo electrónico(*). */
   email: z.string().email().or(z.literal("")).default(""),
+  /** 7.0 Teléfono(*). */
   phone: z.string().default(""),
+  /** Preferencia UI de envío de acuse (no es variable del diccionario). */
   sendEmailReceipt: z.boolean().default(false),
 });
 
@@ -177,12 +248,23 @@ export const adverseEventReportDraftSchema = z.object({
   status: reportStatusEnum.default(ReportStatus.EnProgreso),
   currentStep: z.number().int().min(1).max(5).default(1),
   patient: patientSchema.default({}),
+  /** 10.0 Evento adverso(*) — descripción general (máx. 500). */
+  adverseEventDescription: z.string().default(""),
+  /** Módulo repetible 11–17. */
   events: z.array(adverseEventSchema).default([{}]),
+  /** 18.0 Clasificación de gravedad. */
+  severityGrade: severityGradeSchema.optional(),
+  /** 19.0 Relación causal. */
+  causality: causalitySchema.optional(),
   medicines: z.array(medicineSchema).default([{}]),
-  diseases: z.array(z.string()).default([]),
+  /** 42.0 Enfermedades previas o actuales — texto libre (máx. 500). */
+  previousDiseases: z.string().optional().default(""),
+  /** 43.0 Tratamientos farmacológicos concomitantes (Sí/No). */
+  hasConcomitantTreatments: z.boolean().optional(),
   concomitantTreatments: z.array(concomitantTreatmentSchema).default([]),
-  contact: contactSchema.default({}),
+  /** 50.0 Comentarios adicionales — máx. 500. */
   additionalComments: z.string().optional().default(""),
+  contact: contactSchema.default({}),
 });
 
 export type AdverseEventReportDraft = z.infer<typeof adverseEventReportDraftSchema>;
