@@ -17,6 +17,7 @@ import fieldStyles from "../FormFields.module.css";
 import {
   ACCESS_FORM_OPTIONS,
   ACTION_TAKEN_OPTIONS,
+  COMPOSITION_UNIT_OPTIONS,
   INDICATION_OPTIONS,
   PRESENTATION_OPTIONS,
   ROUTE_OPTIONS,
@@ -82,8 +83,9 @@ export function StepMedicamentos({
             </Field>
 
             <Field
-              label="Compañía farmacéutica productora/distribuidora del medicamento"
+              label="Laboratorio farmacéutico productor/distribuidor del medicamento"
               htmlFor={`med-${index}-co`}
+              hint="Puede indicar el laboratorio, fabricante o distribuidor del producto."
             >
               <TextInput
                 id={`med-${index}-co`}
@@ -145,14 +147,6 @@ export function StepMedicamentos({
               </SelectInput>
             </Field>
 
-            <Field label="Dosis" htmlFor={`med-${index}-dosis`}>
-              <TextInput
-                id={`med-${index}-dosis`}
-                value={m.dose ?? ""}
-                onChange={(e) => updateAt(index, { dose: e.target.value })}
-              />
-            </Field>
-
             <Field
               label="Imagen del envase"
               htmlFor={`med-${index}-img`}
@@ -178,6 +172,35 @@ export function StepMedicamentos({
               ) : null}
             </Field>
 
+            <Field label="Dosis" htmlFor={`med-${index}-dosis`}>
+              <TextInput
+                id={`med-${index}-dosis`}
+                value={m.dose ?? ""}
+                onChange={(e) => updateAt(index, { dose: e.target.value })}
+              />
+            </Field>
+
+            <Field
+              label="Unidad de dosis/presentación"
+              htmlFor={`med-${index}-composition-unit`}
+            >
+              <SelectInput
+                id={`med-${index}-composition-unit`}
+                value={m.compositionUnit}
+                onChange={(e) =>
+                  updateAt(index, {
+                    compositionUnit: e.target.value as Medicine["compositionUnit"],
+                  })
+                }
+              >
+                {COMPOSITION_UNIT_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </SelectInput>
+            </Field>
+            
             <Field
               label="Dosis/presentación (THC)"
               htmlFor={`med-${index}-thc`}
@@ -185,10 +208,10 @@ export function StepMedicamentos({
             >
               <UnitInput
                 id={`med-${index}-thc`}
-                unit="%"
+                unit={m.compositionUnit === "ml" ? "ml" : "%"}
                 value={m.thcPercent?.toString() ?? ""}
                 min={0}
-                max={100}
+                max={m.compositionUnit === "percent" ? 100 : undefined}
                 step="0.1"
                 hasError={Boolean(errors[`medicines.${index}.thcPercent`])}
                 onChange={(v) =>
@@ -204,10 +227,10 @@ export function StepMedicamentos({
             >
               <UnitInput
                 id={`med-${index}-cbd`}
-                unit="%"
+                unit={m.compositionUnit === "ml" ? "ml" : "%"}
                 value={m.cbdPercent?.toString() ?? ""}
                 min={0}
-                max={100}
+                max={m.compositionUnit === "percent" ? 100 : undefined}
                 step="0.1"
                 hasError={Boolean(errors[`medicines.${index}.cbdPercent`])}
                 onChange={(v) =>
@@ -223,10 +246,10 @@ export function StepMedicamentos({
             >
               <UnitInput
                 id={`med-${index}-otro`}
-                unit="%"
+                unit={m.compositionUnit === "ml" ? "ml" : "%"}
                 value={m.otherPercent?.toString() ?? ""}
                 min={0}
-                max={100}
+                max={m.compositionUnit === "percent" ? 100 : undefined}
                 step="0.1"
                 hasError={Boolean(errors[`medicines.${index}.otherPercent`])}
                 onChange={(v) =>
@@ -255,12 +278,13 @@ export function StepMedicamentos({
             <Field
               label="Posología (cantidad por cada vez)"
               htmlFor={`med-${index}-cant`}
-              hint="Gotas"
+              hint="Indique la cantidad administrada en cada toma; por ejemplo, número de gotas, mililitros u otra unidad indicada en el producto."
             >
               <TextInput
                 id={`med-${index}-cant`}
                 type="number"
-                min={1}
+                min={0.01}
+                step="0.01"
                 value={m.amountPerDose?.toString() ?? ""}
                 onChange={(e) =>
                   updateAt(index, {
@@ -319,7 +343,7 @@ export function StepMedicamentos({
             <Field
               label="Fecha de fin de la administración del medicamento"
               error={errors[`medicines.${index}.administrationEndDate`]}
-              hint="No anterior al inicio ni a la fecha de nacimiento. Si aún no finalizó, dejar vacío"
+              hint="Si aún no finalizó, dejar vacío"
             >
               <DateTriple
                 idPrefix={`med-${index}-end`}
@@ -415,7 +439,6 @@ export function StepMedicamentos({
             <Field
               label="Indicación de la administración del medicamento"
               htmlFor={`med-${index}-ind-txt`}
-              hint="Texto libre"
             >
               <TextInput
                 id={`med-${index}-ind-txt`}
@@ -429,7 +452,6 @@ export function StepMedicamentos({
             <Field
               label="Indicación de la administración del medicamento"
               htmlFor={`med-${index}-ind`}
-              hint="Lista desplegable"
             >
               <SelectInput
                 id={`med-${index}-ind`}

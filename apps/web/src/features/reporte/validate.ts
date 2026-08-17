@@ -207,9 +207,16 @@ export function validateStep(
         ["otherPercent", "Otro"],
       ] as const) {
         const v = m[key];
-        if (v !== undefined && (!Number.isFinite(v) || v < 0 || v > 100)) {
+        if (
+          v !== undefined &&
+          (!Number.isFinite(v) ||
+            v < 0 ||
+            (m.compositionUnit === "percent" && v > 100))
+        ) {
           errors[`medicines.${i}.${key}`] =
-            `${label}: valor entre 0 y 100 (%)`;
+            m.compositionUnit === "percent"
+              ? `${label}: porcentaje inválido`
+              : `${label}: volumen inválido`;
         }
       }
 
@@ -273,6 +280,12 @@ export function validateStep(
 
     if (c.reportingArea && c.reportingArea.length > 500) {
       errors.reportingArea = "Máximo 500 caracteres";
+    }
+    if (c.reportingArea === "otro" && !c.reportingAreaOther?.trim()) {
+      errors.reportingAreaOther = "Especifique la institución";
+    }
+    if (c.reportingAreaOther && c.reportingAreaOther.length > 100) {
+      errors.reportingAreaOther = "Máximo 100 caracteres";
     }
     if (c.firstName && c.firstName.length > 50) {
       errors.firstName = "Máximo 50 caracteres";

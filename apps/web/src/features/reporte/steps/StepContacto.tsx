@@ -1,7 +1,7 @@
 import type { AdverseEventReportDraft, Contact } from "@canmedseg/shared";
 
 import { Field, SelectInput, TextInput } from "../FormFields";
-import { PROFESSION_OPTIONS } from "../options";
+import { PROFESSION_OPTIONS, REPORTING_AREA_OPTIONS } from "../options";
 import type { StepErrors } from "../validate";
 
 type StepContactoProps = {
@@ -20,21 +20,50 @@ export function StepContacto({ draft, errors, onChange }: StepContactoProps) {
   return (
     <>
       <Field
-        label="Área Reportante"
+        label="Área reportante"
         htmlFor="f-area"
         error={errors.reportingArea}
       >
-        <TextInput
+        <SelectInput
           id="f-area"
           value={c.reportingArea ?? ""}
-          maxLength={500}
           hasError={Boolean(errors.reportingArea)}
-          onChange={(e) => patch({ reportingArea: e.target.value })}
-        />
+          placeholder="Seleccionar institución"
+          onChange={(e) =>
+            patch({
+              reportingArea: e.target.value,
+              reportingAreaOther:
+                e.target.value === "otro" ? c.reportingAreaOther : "",
+            })
+          }
+        >
+          {REPORTING_AREA_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </SelectInput>
       </Field>
 
+      {c.reportingArea === "otro" ? (
+        <Field
+          label="Especifique la institución"
+          htmlFor="f-area-other"
+          required
+          error={errors.reportingAreaOther}
+        >
+          <TextInput
+            id="f-area-other"
+            value={c.reportingAreaOther ?? ""}
+            maxLength={100}
+            hasError={Boolean(errors.reportingAreaOther)}
+            onChange={(e) => patch({ reportingAreaOther: e.target.value })}
+          />
+        </Field>
+      ) : null}
+
       <Field
-        label="Profesión"
+        label="Rol o profesión"
         htmlFor="f-prof"
         required
         error={errors.profession}
@@ -80,7 +109,7 @@ export function StepContacto({ draft, errors, onChange }: StepContactoProps) {
       </Field>
 
       <Field
-        label="Establecimiento de Salud"
+        label="Establecimiento de salud"
         htmlFor="f-estab"
         error={errors.healthFacility}
       >

@@ -149,7 +149,7 @@ export const ACTION_TAKEN_OPTIONS = [
   {
     value: "cambio_producto",
     label:
-      "Cambio de producto (marca, dosis y/o composición) (NO SE ENVÍA AL MSP)",
+      "Cambio de producto (marca, dosis y/o composición)",
   },
   { value: "desconocida", label: "Desconocida" },
   { value: "no_aplica", label: "No aplica" },
@@ -162,14 +162,27 @@ export const PROFESSION_OPTIONS = [
   {
     value: "otro_profesional_salud",
     label:
-      "Otro profesional de la Salud (enfermería, licenciados de enfermería, obstetras-parteras, odontólogos)",
+      "Otro profesional de la Salud",
   },
-  { value: "paciente", label: "Paciente" },
+  { value: "paciente", label: "Paciente / Usuario" },
   {
     value: "asociacion_cannabis",
     label: "Miembro de asociación de usuarios de cannabis terapéutico",
   },
   { value: "otro_no_sanitario", label: "Otro profesional no sanitario" },
+] as const;
+
+export const REPORTING_AREA_OPTIONS = [
+  { value: "salud_publica", label: "Institución de salud pública" },
+  { value: "salud_privada", label: "Institución de salud privada" },
+  { value: "farmacia", label: "Farmacia" },
+  { value: "organizacion", label: "Asociación u organización" },
+  { value: "otro", label: "Otro" },
+] as const;
+
+export const COMPOSITION_UNIT_OPTIONS = [
+  { value: "percent", label: "%" },
+  { value: "ml", label: "ml" },
 ] as const;
 
 export const YES_NO_OPTIONS = [

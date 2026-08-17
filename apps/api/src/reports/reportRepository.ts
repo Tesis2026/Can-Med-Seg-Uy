@@ -58,17 +58,17 @@ async function insertMedicines(
     const inserted = await client.query<{ id: string }>(
       `INSERT INTO report_medicines (
         report_id, position, name, company, batch_number, access_form, presentation,
-        dose, thc_percent, cbd_percent, other_percent, doses_per_day, amount_per_dose,
+        dose, composition_unit, thc_percent, cbd_percent, other_percent, doses_per_day, amount_per_dose,
         administration_route, administration_start_date, administration_end_date,
         administration_duration_days, recent_product_change, recent_product_change_detail,
         indication_text, indication_category, action_taken
       ) VALUES (
-        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23
       ) RETURNING id`,
       [
         reportId, position, medicine.name, medicine.company || null,
         medicine.batchNumber || null, medicine.accessForm ?? null,
-        medicine.presentation ?? null, medicine.dose || null,
+        medicine.presentation ?? null, medicine.dose || null, medicine.compositionUnit,
         medicine.thcPercent ?? null, medicine.cbdPercent ?? null,
         medicine.otherPercent ?? null, medicine.dosesPerDay ?? null,
         medicine.amountPerDose ?? null, medicine.administrationRoute ?? null,
@@ -122,10 +122,10 @@ export async function createReport(
         patient_height_m, patient_birth_date, patient_age_at_event_start,
         patient_country_of_event_start, adverse_event_description, severity_grade,
         previous_diseases, has_concomitant_treatments, additional_comments,
-        contact_reporting_area, contact_profession, contact_first_name, contact_last_name,
+        contact_reporting_area, contact_reporting_area_other, contact_profession, contact_first_name, contact_last_name,
         contact_health_facility, contact_email, contact_phone, send_email_receipt, form_data
       ) VALUES (
-        'en_revision',$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22
+        'en_revision',$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23
       ) RETURNING id, status, form_data, created_at, submitted_at`,
       [
         report.patient.initials, report.patient.nationalId || null, report.patient.sex,
@@ -134,7 +134,8 @@ export async function createReport(
         report.patient.countryOfEventStart, report.adverseEventDescription,
         report.severityGrade ?? null, report.previousDiseases || null,
         report.hasConcomitantTreatments ?? null, report.additionalComments || null,
-        report.contact.reportingArea || null, report.contact.profession,
+        report.contact.reportingArea || null, report.contact.reportingAreaOther || null,
+        report.contact.profession,
         report.contact.firstName || null, report.contact.lastName || null,
         report.contact.healthFacility || null, report.contact.email, report.contact.phone,
         report.contact.sendEmailReceipt, JSON.stringify(report),

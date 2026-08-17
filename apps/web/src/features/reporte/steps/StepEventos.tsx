@@ -2,9 +2,7 @@ import {
   createEmptyAdverseEvent,
   type AdverseEvent,
   type AdverseEventReportDraft,
-  type Causality,
   type SeriousnessCriterion,
-  type SeverityGrade,
 } from "@canmedseg/shared";
 
 import {
@@ -18,11 +16,9 @@ import {
 } from "../FormFields";
 import fieldStyles from "../FormFields.module.css";
 import {
-  CAUSALITY_OPTIONS,
   EVENT_OUTCOME_OPTIONS,
   MEDDRA_DEMO_OPTIONS,
   SERIOUSNESS_OPTIONS,
-  SEVERITY_GRADE_OPTIONS,
   YES_NO_OPTIONS,
 } from "../options";
 import type { StepErrors } from "../validate";
@@ -138,7 +134,7 @@ export function StepEventos({ draft, errors, onChange }: StepEventosProps) {
             <Field
               label="Fecha de finalización del evento adverso"
               error={errors[`events.${index}.endDate`]}
-              hint="No anterior al inicio ni a la fecha de nacimiento. Si aún no finalizó, dejar vacío"
+              hint="Si aún no finalizó, dejar vacío"
             >
               <DateTriple
                 idPrefix={`ev-${index}-end`}
@@ -198,6 +194,7 @@ export function StepEventos({ draft, errors, onChange }: StepEventosProps) {
               htmlFor={`ev-${index}-grave`}
               required
               error={errors[`events.${index}.isSerious`]}
+              hint="Se considera grave si causó la muerte, puso en riesgo la vida, requirió o prolongó una hospitalización, produjo discapacidad, una malformación congénita u otra condición médica importante."
             >
               <SelectInput
                 id={`ev-${index}-grave`}
@@ -271,53 +268,6 @@ export function StepEventos({ draft, errors, onChange }: StepEventosProps) {
         Agregar otra reacción/síntoma
       </AddButton>
 
-      <Field
-        label="Clasificación de gravedad"
-        htmlFor="f-sev"
-        hint="Clasificación OMS"
-      >
-        <SelectInput
-          id="f-sev"
-          value={draft.severityGrade ?? ""}
-          onChange={(e) =>
-            onChange({
-              severityGrade: e.target.value
-                ? (e.target.value as SeverityGrade)
-                : undefined,
-            })
-          }
-        >
-          {SEVERITY_GRADE_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </SelectInput>
-      </Field>
-
-      <Field
-        label="Relación causal"
-        htmlFor="f-caus"
-        hint="Escala de Causalidad OMS-UMC"
-      >
-        <SelectInput
-          id="f-caus"
-          value={draft.causality ?? ""}
-          onChange={(e) =>
-            onChange({
-              causality: e.target.value
-                ? (e.target.value as Causality)
-                : undefined,
-            })
-          }
-        >
-          {CAUSALITY_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </SelectInput>
-      </Field>
     </>
   );
 }

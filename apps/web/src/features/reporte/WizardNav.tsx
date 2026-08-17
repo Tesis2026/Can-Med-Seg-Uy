@@ -38,7 +38,7 @@ export function WizardNav({
                 checked={Boolean(emailReceipt)}
                 onChange={(e) => onEmailReceiptChange?.(e.target.checked)}
               />
-              Enviar recibo por correo electrónico
+              Deseo recibir un resumen de lo notificado
             </label>
             <button type="button" className={styles.primary} onClick={onSubmit}>
               Enviar reportes

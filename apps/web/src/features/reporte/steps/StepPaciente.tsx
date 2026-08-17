@@ -31,6 +31,7 @@ function parseOptionalNumber(raw: string): number | undefined {
 export function StepPaciente({ draft, errors, onChange }: StepPacienteProps) {
   const p = draft.patient;
   const bmi = computeBmi(p.weightKg, p.heightM);
+  const heightCm = p.heightM === undefined ? "" : String(p.heightM * 100);
   const ageDisplay =
     p.ageAtEventStart?.toString() ??
     computeAgeAtEventStart(draft)?.toString() ??
@@ -64,7 +65,11 @@ export function StepPaciente({ draft, errors, onChange }: StepPacienteProps) {
           value={p.nationalId ?? ""}
           inputMode="numeric"
           hasError={Boolean(errors.nationalId)}
-          onChange={(e) => patch({ nationalId: e.target.value })}
+          onChange={(e) =>
+            patch({
+              nationalId: e.target.value.replace(/\D/g, "").slice(0, 8),
+            })
+          }
         />
       </Field>
 
@@ -94,7 +99,8 @@ export function StepPaciente({ draft, errors, onChange }: StepPacienteProps) {
           id="f-peso"
           unit="kg"
           value={p.weightKg?.toString() ?? ""}
-          min={0}
+          min={5}
+          max={200}
           step="0.1"
           hasError={Boolean(errors.weightKg)}
           onChange={(v) => patch({ weightKg: parseOptionalNumber(v) })}
@@ -104,12 +110,16 @@ export function StepPaciente({ draft, errors, onChange }: StepPacienteProps) {
       <Field label="Talla" htmlFor="f-talla" error={errors.heightM}>
         <UnitInput
           id="f-talla"
-          unit="m"
-          value={p.heightM?.toString() ?? ""}
-          min={0}
-          step="0.01"
+          unit="cm"
+          value={heightCm}
+          min={50}
+          max={250}
+          step="1"
           hasError={Boolean(errors.heightM)}
-          onChange={(v) => patch({ heightM: parseOptionalNumber(v) })}
+          onChange={(v) => {
+            const centimeters = parseOptionalNumber(v);
+            patch({ heightM: centimeters === undefined ? undefined : centimeters / 100 });
+          }}
         />
       </Field>
 
@@ -130,7 +140,7 @@ export function StepPaciente({ draft, errors, onChange }: StepPacienteProps) {
         label="Fecha de nacimiento"
         required
         error={errors.birthDate}
-        hint="dd/mm/aaaa — desde 1900 hasta hoy"
+        hint="dd/mm/aaaa"
       >
         <DateTriple
           idPrefix="f-birth"

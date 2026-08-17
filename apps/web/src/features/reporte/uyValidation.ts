@@ -25,9 +25,8 @@ export function uyCiValidationDigit(ciWithoutCheck: string): number {
 
 /** Valida cédula uruguaya (7–8 dígitos + dígito verificador). */
 export function isValidUyCi(value: string): boolean {
-  const ci = digitsOnly(value);
-  if (ci.length < 7 || ci.length > 8) return false;
-  if (!/^\d+$/.test(ci)) return false;
+  const ci = value.trim();
+  if (!/^\d{8}$/.test(ci)) return false;
   const body = ci.slice(0, -1);
   const check = Number(ci.slice(-1));
   return uyCiValidationDigit(body) === check;
@@ -76,8 +75,11 @@ export function uyPhoneError(value: string, required: boolean): string | null {
 export function uyCiError(value: string, required: boolean): string | null {
   const raw = value.trim();
   if (!raw) return required ? "Campo obligatorio" : null;
+  if (raw.length != 8) {
+    return "La cédula debe tener 8 dígitos";
+  }
   if (!isValidUyCi(raw)) {
-    return "Cédula uruguaya inválida (verifique el número y el dígito verificador)";
+    return "La cédula ingresada no es válida";
   }
   return null;
 }
@@ -108,15 +110,17 @@ export function initialsError(value: string, required: boolean): string | null {
 
 export function weightKgError(value: number | undefined): string | null {
   if (value === undefined) return null;
-  if (!Number.isFinite(value) || value <= 0) return "Peso inválido";
-  if (value < 0.5 || value > 400) return "Peso fuera de rango (0,5–400 kg)";
+  if (!Number.isFinite(value) || value < 5 || value > 250) {
+    return "El peso debe estar entre 5 y 250 kg";
+  }
   return null;
 }
 
 export function heightMError(value: number | undefined): string | null {
   if (value === undefined) return null;
-  if (!Number.isFinite(value) || value <= 0) return "Talla inválida";
-  if (value < 0.3 || value > 2.5) return "Talla fuera de rango (0,30–2,50 m)";
+  if (!Number.isFinite(value) || value < 0.5 || value > 2.5) {
+    return "Talla debe estar entre 50 y 250 cm";
+  }
   return null;
 }
 

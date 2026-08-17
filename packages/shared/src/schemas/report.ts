@@ -119,18 +119,20 @@ export const medicineSchema = z.object({
     .optional(),
   /** 25.0 Dosis — texto libre. */
   dose: z.string().optional().default(""),
+  /** Unidad informada para dosis/presentación. */
+  compositionUnit: z.enum(["percent", "ml"]).default("percent"),
   /** 26.0 Imagen del envase — nombre de archivo (demo). */
   packageImageName: z.string().optional().default(""),
   /** 27.0 Dosis/presentación (THC) — %. */
-  thcPercent: z.number().min(0).max(100).optional(),
+  thcPercent: z.number().min(0).optional(),
   /** 28.0 Dosis/presentación (CBD) — %. */
-  cbdPercent: z.number().min(0).max(100).optional(),
+  cbdPercent: z.number().min(0).optional(),
   /** 29.0 Dosis/presentación (Otro) — %. */
-  otherPercent: z.number().min(0).max(100).optional(),
+  otherPercent: z.number().min(0).optional(),
   /** 30.0 Posología (veces al día). */
   dosesPerDay: z.number().int().positive().optional(),
   /** 31.0 Posología (cantidad por cada vez) — gotas. */
-  amountPerDose: z.number().int().positive().optional(),
+  amountPerDose: z.number().positive().optional(),
   /**
    * 32–33.0 Vía de administración.
    * Se usa la lista completa (var. 33); una sola vía en el formulario.
@@ -216,6 +218,8 @@ export type ConcomitantTreatment = z.infer<typeof concomitantTreatmentSchema>;
 export const contactSchema = z.object({
   /** 1.0 Área Reportante — máx. 500. */
   reportingArea: z.string().optional().default(""),
+  /** Institución especificada cuando el área reportante es "otro". */
+  reportingAreaOther: z.string().optional().default(""),
   /** 2.0 Profesión(*). */
   profession: z
     .enum([
@@ -296,7 +300,20 @@ export const submitAdverseEventReportSchema = adverseEventReportDraftSchema.supe
       if (!medicine.administrationStartDate?.trim()) {
         required(["medicines", index, "administrationStartDate"]);
       }
+      for (const field of ["thcPercent", "cbdPercent", "otherPercent"] as const) {
+        const value = medicine[field];
+        if (medicine.compositionUnit === "percent" && value !== undefined && value > 100) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["medicines", index, field],
+            message: "Porcentaje inválido",
+          });
+        }
+      }
     });
+    if (report.contact.reportingArea === "otro" && !report.contact.reportingAreaOther?.trim()) {
+      required(["contact", "reportingAreaOther"], "Especifique la institución");
+    }
     if (!report.contact.profession) required(["contact", "profession"]);
     if (!report.contact.email.trim()) required(["contact", "email"]);
     if (!report.contact.phone.trim()) required(["contact", "phone"]);
