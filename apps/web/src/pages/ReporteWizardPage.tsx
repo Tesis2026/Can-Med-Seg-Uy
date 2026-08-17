@@ -7,6 +7,7 @@ import {
   hasConsentInicioAccepted,
 } from "../components/consent";
 import { ProgressBar } from "../features/reporte/ProgressBar";
+import { submitReport } from "../features/reporte/reportApi";
 import { STEP_TITLES } from "../features/reporte/options";
 import styles from "../features/reporte/reporte.module.css";
 import { StepAdicional } from "../features/reporte/steps/StepAdicional";
@@ -18,14 +19,13 @@ import { useReportDraft } from "../features/reporte/useReportDraft";
 import { validateStep, type StepErrors } from "../features/reporte/validate";
 import { WizardNav } from "../features/reporte/WizardNav";
 
-const MOCK_SUBMIT_MS = 800;
-
 export function ReporteWizardPage() {
   const navigate = useNavigate();
   const { draft, draftRef, updateDraft, clearDraft } = useReportDraft();
   const [errors, setErrors] = useState<StepErrors>({});
   const [showFinalConsent, setShowFinalConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!hasConsentInicioAccepted()) {
@@ -68,13 +68,21 @@ export function ReporteWizardPage() {
 
   async function handleAcceptAndSend() {
     setSubmitting(true);
+    setSubmitError(null);
     try {
-      await new Promise((resolve) => setTimeout(resolve, MOCK_SUBMIT_MS));
+      const created = await submitReport(draftRef.current);
       clearDraft();
-      navigate("/reporte/exito");
+      navigate("/reporte/exito", { state: { reportId: created.id } });
+      setShowFinalConsent(false);
+    } catch (error) {
+      setSubmitError(
+        error instanceof Error
+          ? error.message
+          : "No se pudo registrar el reporte. Intente nuevamente.",
+      );
+      setShowFinalConsent(false);
     } finally {
       setSubmitting(false);
-      setShowFinalConsent(false);
     }
   }
 
@@ -83,6 +91,12 @@ export function ReporteWizardPage() {
       <section className={styles.card}>
         <ProgressBar step={step} />
         <h1 className={styles.title}>{title}</h1>
+
+        {submitError ? (
+          <p className={styles.submitError} role="alert">
+            {submitError}
+          </p>
+        ) : null}
 
         <div className={styles.fields}>
           {step === 1 ? (

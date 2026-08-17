@@ -269,6 +269,57 @@ export const adverseEventReportDraftSchema = z.object({
 
 export type AdverseEventReportDraft = z.infer<typeof adverseEventReportDraftSchema>;
 
+/** Contrato del POST: el borrador es permisivo; al enviar se exige RF-3. */
+export const submitAdverseEventReportSchema = adverseEventReportDraftSchema.superRefine(
+  (report, context) => {
+    const required = (path: (string | number)[], message = "Campo obligatorio") =>
+      context.addIssue({ code: z.ZodIssueCode.custom, path, message });
+
+    if (!report.patient.initials.trim()) required(["patient", "initials"]);
+    if (!report.patient.sex) required(["patient", "sex"]);
+    if (!report.patient.birthDate.trim()) required(["patient", "birthDate"]);
+    if (report.patient.ageAtEventStart === undefined) required(["patient", "ageAtEventStart"]);
+    if (!report.patient.countryOfEventStart.trim()) required(["patient", "countryOfEventStart"]);
+    if (!report.adverseEventDescription.trim()) required(["adverseEventDescription"]);
+    if (report.events.length === 0) required(["events"], "Agregue al menos un evento adverso");
+    report.events.forEach((event, index) => {
+      if (!event.meddraTerm.trim()) required(["events", index, "meddraTerm"]);
+      if (!event.startDate.trim()) required(["events", index, "startDate"]);
+      if (event.isSerious === undefined) required(["events", index, "isSerious"]);
+      if (event.isSerious && !event.seriousnessCriterion) {
+        required(["events", index, "seriousnessCriterion"]);
+      }
+    });
+    if (report.medicines.length === 0) required(["medicines"], "Agregue al menos un medicamento");
+    report.medicines.forEach((medicine, index) => {
+      if (!medicine.name.trim()) required(["medicines", index, "name"]);
+      if (!medicine.administrationStartDate?.trim()) {
+        required(["medicines", index, "administrationStartDate"]);
+      }
+    });
+    if (!report.contact.profession) required(["contact", "profession"]);
+    if (!report.contact.email.trim()) required(["contact", "email"]);
+    if (!report.contact.phone.trim()) required(["contact", "phone"]);
+  },
+);
+
+export type SubmitAdverseEventReport = z.infer<typeof submitAdverseEventReportSchema>;
+
+export const createdReportSchema = z.object({
+  id: z.string().uuid(),
+  status: z.literal(ReportStatus.EnRevision),
+  createdAt: z.string().datetime(),
+  submittedAt: z.string().datetime(),
+});
+
+export type CreatedReport = z.infer<typeof createdReportSchema>;
+
+export const reportDetailSchema = createdReportSchema.extend({
+  report: adverseEventReportDraftSchema,
+});
+
+export type ReportDetail = z.infer<typeof reportDetailSchema>;
+
 export function createEmptyReportDraft(): AdverseEventReportDraft {
   return adverseEventReportDraftSchema.parse({});
 }

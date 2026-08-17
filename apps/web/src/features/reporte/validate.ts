@@ -171,7 +171,7 @@ export function validateStep(
         errors[`medicines.${i}.name`] = "Campo obligatorio";
       }
 
-      optionalDate(
+      requireDate(
         errors,
         `medicines.${i}.administrationStartDate`,
         m.administrationStartDate,
