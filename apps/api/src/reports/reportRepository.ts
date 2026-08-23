@@ -111,6 +111,8 @@ async function insertConcomitants(
 export async function createReport(
   pool: Pool,
   input: SubmitAdverseEventReport,
+  /** Sesión del notificador; `null` para el camino anónimo (RF-1.2). */
+  notifierUserId: string | null = null,
 ): Promise<CreatedReport> {
   const client = await pool.connect();
   const report = { ...input, status: ReportStatus.EnRevision, currentStep: 5 };
@@ -118,17 +120,17 @@ export async function createReport(
     await client.query("BEGIN");
     const inserted = await client.query<ReportRow>(
       `INSERT INTO reports (
-        status, patient_initials, patient_national_id, patient_sex, patient_weight_kg,
+        status, notifier_user_id, patient_initials, patient_national_id, patient_sex, patient_weight_kg,
         patient_height_m, patient_birth_date, patient_age_at_event_start,
         patient_country_of_event_start, adverse_event_description, severity_grade,
         previous_diseases, has_concomitant_treatments, additional_comments,
         contact_reporting_area, contact_reporting_area_other, contact_profession, contact_first_name, contact_last_name,
         contact_health_facility, contact_email, contact_phone, send_email_receipt, form_data
       ) VALUES (
-        'en_revision',$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23
+        'en_revision',$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24
       ) RETURNING id, status, form_data, created_at, submitted_at`,
       [
-        report.patient.initials, report.patient.nationalId || null, report.patient.sex,
+        notifierUserId, report.patient.initials, report.patient.nationalId || null, report.patient.sex,
         report.patient.weightKg ?? null, report.patient.heightM ?? null,
         report.patient.birthDate, report.patient.ageAtEventStart,
         report.patient.countryOfEventStart, report.adverseEventDescription,
@@ -143,7 +145,7 @@ export async function createReport(
     );
 
     const row = inserted.rows[0];
-    if (!row) throw new Error("PostgreSQL no devolviÃ³ el reporte creado");
+    if (!row) throw new Error("PostgreSQL no devolvió el reporte creado");
     await insertEvents(client, row.id, report);
     await insertMedicines(client, row.id, report);
     await insertConcomitants(client, row.id, report);

@@ -4,8 +4,11 @@ import { ReportStatus } from "@canmedseg/shared";
 
 import {
   ConsentFinalModal,
+  ConsentInicioModal,
   hasConsentInicioAccepted,
+  setConsentInicioAccepted,
 } from "../components/consent";
+import { useSession } from "../features/auth/SessionContext";
 import { ProgressBar } from "../features/reporte/ProgressBar";
 import { submitReport } from "../features/reporte/reportApi";
 import { STEP_TITLES } from "../features/reporte/options";
@@ -21,17 +24,26 @@ import { WizardNav } from "../features/reporte/WizardNav";
 
 export function ReporteWizardPage() {
   const navigate = useNavigate();
+  const { session, consentPending, loading: sessionLoading } = useSession();
   const { draft, draftRef, updateDraft, clearDraft } = useReportDraft();
   const [errors, setErrors] = useState<StepErrors>({});
   const [showFinalConsent, setShowFinalConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [consentAccepted, setConsentAccepted] = useState(() => hasConsentInicioAccepted());
 
+  /**
+   * El consentimiento se pide antes de empezar el reporte (notas de cliente).
+   * Quien ya lo aceptó al iniciar sesión no lo vuelve a ver; el visitante anónimo
+   * lo acepta acá mismo en vez de ser expulsado al inicio.
+   */
   useEffect(() => {
-    if (!hasConsentInicioAccepted()) {
-      navigate("/", { replace: true });
+    if (sessionLoading || consentAccepted) return;
+    if (session.authenticated && !consentPending) {
+      setConsentInicioAccepted();
+      setConsentAccepted(true);
     }
-  }, [navigate]);
+  }, [sessionLoading, consentAccepted, session.authenticated, consentPending]);
 
   const step = draft.currentStep;
   const title = STEP_TITLES[step - 1];
@@ -84,6 +96,19 @@ export function ReporteWizardPage() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (!consentAccepted) {
+    return (
+      <ConsentInicioModal
+        open
+        onAccept={() => {
+          setConsentInicioAccepted();
+          setConsentAccepted(true);
+        }}
+        onCancel={() => navigate("/", { replace: true })}
+      />
+    );
   }
 
   return (

@@ -89,7 +89,6 @@ export function StepEventos({ draft, errors, onChange }: StepEventosProps) {
           <SubCard
             key={index}
             title={`Reacción/Síntoma${events.length > 1 ? ` (${index + 1})` : ""}`}
-            hint="Módulo repetible (preguntas 11 a 17)."
             onRemove={
               events.length > 1
                 ? () => setEvents((prev) => prev.filter((_, i) => i !== index))

@@ -4,7 +4,49 @@ export {
   type ReportStatus as ReportStatusValue,
 } from "./enums/report-status";
 
-export { Role, ROLES, type Role as RoleValue } from "./enums/role";
+export {
+  Role,
+  ROLES,
+  ROLE_LABELS,
+  ASSIGNABLE_ROLES,
+  isAssignableRole,
+  type Role as RoleValue,
+  type AssignableRole,
+} from "./enums/role";
+
+export {
+  HealthProfessionSubtype,
+  HEALTH_PROFESSION_SUBTYPES,
+  HEALTH_PROFESSION_SUBTYPE_LABELS,
+  isHealthProfessionSubtype,
+  type HealthProfessionSubtype as HealthProfessionSubtypeValue,
+} from "./enums/health-profession";
+
+export {
+  Permission,
+  PERMISSIONS,
+  permissionsForRoles,
+  hasPermission,
+  type Permission as PermissionValue,
+} from "./auth/permissions";
+
+export { CONSENT_VERSION } from "./consent/consent";
+
+export {
+  roleSchema,
+  assignableRoleSchema,
+  healthProfessionSubtypeSchema,
+  permissionSchema,
+  userRoleSchema,
+  sessionUserSchema,
+  sessionSchema,
+  acceptConsentInputSchema,
+  anonymousSession,
+  type UserRole,
+  type SessionUser,
+  type Session,
+  type AcceptConsentInput,
+} from "./schemas/auth";
 
 export {
   patientSchema,

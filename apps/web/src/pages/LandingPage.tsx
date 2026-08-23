@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import {
   ConsentInicioModal,
   setConsentInicioAccepted,
 } from "../components/consent";
 import { Button } from "../components/ui/Button";
+import { useSession } from "../features/auth/SessionContext";
 
 import styles from "./LandingPage.module.css";
 
@@ -16,15 +17,18 @@ const FOOTER_LINKS = [
   { label: "Política de privacidad", href: "#" },
 ] as const;
 
-function handleGubUyClick() {
-  window.alert("Próximamente (demo)");
-}
-
 export function LandingPage() {
   const navigate = useNavigate();
+  const { session, user, consentPending } = useSession();
   const [consentOpen, setConsentOpen] = useState(false);
 
   function handleReportClick() {
+    // Un usuario que ya consintió al ingresar no vuelve a ver el pop-up.
+    if (session.authenticated && !consentPending) {
+      setConsentInicioAccepted();
+      navigate("/reporte");
+      return;
+    }
     setConsentOpen(true);
   }
 
@@ -54,13 +58,24 @@ export function LandingPage() {
           efectos adversos asociados al uso de cannabis medicinal, contribuyendo
           a la seguridad y monitoreo de estos tratamientos en Uruguay.
         </p>
+        {user ? (
+          <p className={styles.sessionNote}>
+            Sesión iniciada como <strong>{user.displayName}</strong>.
+          </p>
+        ) : null}
         <div className={styles.btnRow}>
           <Button variant="primary" type="button" onClick={handleReportClick}>
             Reportar evento adverso
           </Button>
-          <Button variant="secondary" type="button" onClick={handleGubUyClick}>
-            Iniciar sesión con GUB UY
-          </Button>
+          {session.authenticated ? (
+            <Button variant="secondary" to="/inicio">
+              Ir a mi inicio
+            </Button>
+          ) : (
+            <Button variant="secondary" to="/login">
+              Iniciar sesión con GUB UY
+            </Button>
+          )}
         </div>
       </section>
 
@@ -92,6 +107,10 @@ export function LandingPage() {
             {link.label}
           </a>
         ))}
+        {/* Enlace persistente al consentimiento informado (Ley 18.331). */}
+        <Link to="/consentimiento" className={styles.link}>
+          Consentimiento informado y protección de datos
+        </Link>
       </nav>
 
       <ConsentInicioModal

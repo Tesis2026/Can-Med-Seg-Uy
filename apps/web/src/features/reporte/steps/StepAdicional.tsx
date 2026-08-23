@@ -115,7 +115,7 @@ export function StepAdicional({ draft, errors, onChange }: StepAdicionalProps) {
             return (
               <SubCard
                 key={index}
-                title={`Nombre del medicamento (Módulo repetible)${
+                title={`Tratamiento concomitante${
                   treatments.length > 1 ? ` (${index + 1})` : ""
                 }`}
                 onRemove={
@@ -130,7 +130,7 @@ export function StepAdicional({ draft, errors, onChange }: StepAdicionalProps) {
                 }
               >
                 <Field
-                  label="Nombre del medicamento (Módulo repetible)"
+                  label="Nombre del medicamento"
                   htmlFor={`conc-${index}-name`}
                   required
                   error={errors[`concomitant.${index}.name`]}
@@ -146,7 +146,7 @@ export function StepAdicional({ draft, errors, onChange }: StepAdicionalProps) {
                 </Field>
 
                 <Field
-                  label="Posología (milígramos/toma)"
+                  label="Posología (miligramos/toma)"
                   htmlFor={`conc-${index}-mg`}
                 >
                   <UnitInput

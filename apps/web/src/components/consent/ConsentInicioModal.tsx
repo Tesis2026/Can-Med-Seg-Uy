@@ -7,12 +7,30 @@ export type ConsentInicioModalProps = {
   open: boolean;
   onAccept: () => void;
   onCancel: () => void;
+  /** Texto del botón primario. Default: "Aceptar y continuar". */
+  acceptLabel?: string;
+  /** Texto del botón secundario. Default: "Cancelar". */
+  cancelLabel?: string;
+  /** Deshabilita los botones mientras se registra el consentimiento. */
+  busy?: boolean;
+  /**
+   * Permite cerrar con Escape o clic en el fondo. En el primer login es `false`:
+   * sin consentimiento no se puede usar la app (Ley 18.331).
+   */
+  dismissible?: boolean;
+  /** Mensaje de error a mostrar dentro del modal (p. ej. falla al registrar). */
+  error?: string | null;
 };
 
 export function ConsentInicioModal({
   open,
   onAccept,
   onCancel,
+  acceptLabel = "Aceptar y continuar",
+  cancelLabel = "Cancelar",
+  busy = false,
+  dismissible = true,
+  error = null,
 }: ConsentInicioModalProps) {
   const titleId = useId();
   const acceptRef = useRef<HTMLButtonElement>(null);
@@ -23,7 +41,7 @@ export function ConsentInicioModal({
     acceptRef.current?.focus();
 
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
+      if (event.key === "Escape" && dismissible && !busy) {
         onCancel();
       }
     }
@@ -36,7 +54,7 @@ export function ConsentInicioModal({
       document.removeEventListener("keydown", onKeyDown);
       document.body.style.overflow = previousOverflow;
     };
-  }, [open, onCancel]);
+  }, [open, onCancel, dismissible, busy]);
 
   if (!open) return null;
 
@@ -45,7 +63,7 @@ export function ConsentInicioModal({
       className={styles.backdrop}
       role="presentation"
       onClick={(event) => {
-        if (event.target === event.currentTarget) onCancel();
+        if (event.target === event.currentTarget && dismissible && !busy) onCancel();
       }}
     >
       <div
@@ -62,17 +80,28 @@ export function ConsentInicioModal({
             <p key={index}>{paragraph}</p>
           ))}
         </div>
+        {error ? (
+          <p className={styles.error} role="alert">
+            {error}
+          </p>
+        ) : null}
         <div className={styles.actions}>
-          <button type="button" className={styles.cancelBtn} onClick={onCancel}>
-            Cancelar
+          <button
+            type="button"
+            className={styles.cancelBtn}
+            onClick={onCancel}
+            disabled={busy}
+          >
+            {cancelLabel}
           </button>
           <button
             ref={acceptRef}
             type="button"
             className={styles.acceptBtn}
             onClick={onAccept}
+            disabled={busy}
           >
-            Aceptar y continuar
+            {busy ? "Registrando…" : acceptLabel}
           </button>
         </div>
       </div>

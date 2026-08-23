@@ -415,7 +415,7 @@ export function StepMedicamentos({
 
             {m.recentProductChange ? (
               <Field
-                label="Cambio reciente de producto-Especificar"
+                label="Especifique el cambio"
                 htmlFor={`med-${index}-cambio-det`}
                 required
                 error={errors[`medicines.${index}.recentProductChangeDetail`]}

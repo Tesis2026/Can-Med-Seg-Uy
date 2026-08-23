@@ -160,3 +160,8 @@
     gap: 12px;
   }
 }
+
+.sessionNote {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}

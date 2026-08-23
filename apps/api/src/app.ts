@@ -1,7 +1,11 @@
 import cors from "@fastify/cors";
+import formbody from "@fastify/formbody";
 import Fastify from "fastify";
 
-import { config } from "./config";
+import { registerAuthContext } from "./auth/authContext";
+import { authRoutes } from "./auth/authRoutes";
+import { mockIdpRoutes } from "./auth/mockIdpRoutes";
+import { config, isMockIdentityProvider } from "./config";
 import { pool } from "./database/pool";
 import { reportRoutes } from "./reports/reportRoutes";
 
@@ -16,7 +20,13 @@ function getZodIssues(error: unknown): unknown[] | null {
 
 export async function buildApp() {
   const app = Fastify({ logger: true });
-  await app.register(cors, { origin: config.CORS_ORIGIN.split(",").map((origin) => origin.trim()) });
+  await app.register(cors, {
+    origin: config.CORS_ORIGIN.split(",").map((origin) => origin.trim()),
+    credentials: true,
+  });
+  // El IdP mock y el token endpoint hablan application/x-www-form-urlencoded.
+  await app.register(formbody);
+  registerAuthContext(app);
 
   app.get("/health", async (_request, reply) => {
     await pool.query("SELECT 1");
@@ -35,7 +45,13 @@ export async function buildApp() {
     return reply.code(500).send({ message: "Error interno del servidor" });
   });
 
+  await app.register(authRoutes, { prefix: "/api" });
   await app.register(reportRoutes, { prefix: "/api" });
+
+  if (isMockIdentityProvider) {
+    await app.register(mockIdpRoutes, { prefix: "/mock-idp" });
+    app.log.warn("IdP mock montado en /mock-idp (AUTH_PROVIDER=mock). No usar en producción.");
+  }
 
   app.addHook("onClose", async () => {
     await pool.end();
