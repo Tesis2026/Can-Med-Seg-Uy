@@ -5,6 +5,8 @@ type WizardNavProps = {
   onPrev: () => void;
   onNext: () => void;
   onSubmit: () => void;
+  /** Bloquea el envío hasta resolver el CAPTCHA del camino anónimo (RF-3.6). */
+  submitDisabled?: boolean;
   emailReceipt?: boolean;
   onEmailReceiptChange?: (value: boolean) => void;
 };
@@ -14,6 +16,7 @@ export function WizardNav({
   onPrev,
   onNext,
   onSubmit,
+  submitDisabled = false,
   emailReceipt,
   onEmailReceiptChange,
 }: WizardNavProps) {
@@ -40,7 +43,17 @@ export function WizardNav({
               />
               Deseo recibir un resumen de lo notificado
             </label>
-            <button type="button" className={styles.primary} onClick={onSubmit}>
+            <button
+              type="button"
+              className={styles.primary}
+              onClick={onSubmit}
+              disabled={submitDisabled}
+              title={
+                submitDisabled
+                  ? "Complete la verificación de seguridad para enviar el reporte"
+                  : undefined
+              }
+            >
               Enviar reportes
             </button>
           </>

@@ -1,8 +1,8 @@
-/* Frames `Home usuario común` / `Home investigador` / `Home administrador` del .pen */
+/* Frame `Home usuario común` del .pen (documentacion/Pantallas/TesisPantallas.pen) */
 .page {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 32px;
 }
 
 .loading {
@@ -11,21 +11,19 @@
 }
 
 .welcome {
-  background: var(--color-surface);
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 24px 32px;
+  gap: 6px;
 }
 
 .welcomeLabel {
   color: var(--color-text-secondary);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .welcomeName {
   color: var(--color-text);
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 700;
 }
 
@@ -39,7 +37,7 @@
 }
 
 .chip {
-  background: #e3ecf8;
+  background: #e8eef7;
   color: var(--color-primary);
   font-size: 12px;
   font-weight: 600;
@@ -47,59 +45,151 @@
   border-radius: var(--radius-btn);
 }
 
-.actions {
+/* Estadísticas del sistema */
+.statsCard {
+  background: var(--color-surface);
+  border: 1px solid #d1d5db;
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.statsTitle {
+  color: var(--color-primary);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.statsRow {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 16px;
 }
 
-.primary,
-.secondary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px 24px;
-  border-radius: var(--radius-btn);
-  font-size: 14px;
-  font-weight: 600;
-  text-decoration: none;
-  border: 1px solid transparent;
+.statTile {
+  flex: 1 1 200px;
+  background: #e8eef7;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-.primary {
-  background: var(--color-primary);
-  color: var(--color-primary-contrast);
-}
-
-.primary:hover {
-  filter: brightness(1.06);
-}
-
-.secondary {
-  background: var(--color-surface);
+.statValue {
   color: var(--color-primary);
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.statLabel {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+
+.statsLead {
+  color: var(--color-text);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.statsText {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.sectionTitle {
+  color: var(--color-text);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+/* Accesos rápidos (2 × 2 en escritorio) */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.card:hover {
   border-color: var(--color-primary);
 }
 
-.secondary:hover {
-  background: rgba(26, 74, 140, 0.06);
+.cardIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
+  background: #e8eef7;
+  color: var(--color-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cardIcon svg {
+  width: 22px;
+  height: 22px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.cardTitle {
+  color: var(--color-text);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.cardText {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.cardFoot {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  color: var(--color-primary);
+  margin-top: auto;
+}
+
+.cardFoot svg {
+  width: 18px;
+  height: 18px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@media (max-width: 860px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
 }
 
 @media (max-width: 640px) {
-  .welcome {
-    padding: 20px 16px;
+  .page {
+    gap: 20px;
   }
 
   .welcomeName {
-    font-size: 20px;
+    font-size: 22px;
   }
 
-  .actions {
-    flex-direction: column;
-  }
-
-  .primary,
-  .secondary {
-    width: 100%;
+  .statsCard {
+    padding: 16px;
   }
 }

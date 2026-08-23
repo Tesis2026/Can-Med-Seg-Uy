@@ -28,6 +28,23 @@
   gap: 16px;
 }
 
+.loading {
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
+/* Estado del guardado parcial (RF-4.2) y aviso del camino anónimo (RF-4.4). */
+.draftNotice {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  max-width: 52rem;
+}
+
+.draftError {
+  font-size: 12px;
+  color: #b00020;
+}
+
 @media (max-width: 640px) {
   .card {
     padding: 20px 16px 24px;

@@ -135,9 +135,23 @@ function HeaderMenu() {
               Mi inicio
             </Link>
           ) : null}
-          <Link className={styles.menuItem} role="menuitem" to="/reporte">
+          <Link className={styles.menuItem} role="menuitem" to="/reporte?nuevo=1">
             Nuevo reporte
           </Link>
+          {session.authenticated ? (
+            <>
+              <Link
+                className={styles.menuItem}
+                role="menuitem"
+                to="/formularios-en-progreso"
+              >
+                Formularios en progreso
+              </Link>
+              <Link className={styles.menuItem} role="menuitem" to="/historial">
+                Historial de reportes
+              </Link>
+            </>
+          ) : null}
           <Link className={styles.menuItem} role="menuitem" to="/consentimiento">
             Consentimiento informado
           </Link>

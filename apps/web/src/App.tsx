@@ -3,6 +3,9 @@ import { Route, Routes, Navigate } from "react-router-dom";
 import { ConsentGate } from "./features/auth/ConsentGate";
 import { AppShell } from "./layouts/AppShell";
 import { ConsentimientoPage } from "./pages/ConsentimientoPage";
+import { DetalleReportePage } from "./pages/DetalleReportePage";
+import { FormulariosEnProgresoPage } from "./pages/FormulariosEnProgresoPage";
+import { HistorialPage } from "./pages/HistorialPage";
 import { InicioPage } from "./pages/InicioPage";
 import { LandingPage } from "./pages/LandingPage";
 import { LoginPage } from "./pages/LoginPage";
@@ -26,6 +29,10 @@ export function App() {
           <Route path="inicio" element={<InicioPage />} />
           <Route path="reporte" element={<ReporteWizardPage />} />
           <Route path="reporte/exito" element={<ReporteExitoPage />} />
+          {/* RF-4.5 y RF-6: solo con sesión; cada página redirige al login. */}
+          <Route path="formularios-en-progreso" element={<FormulariosEnProgresoPage />} />
+          <Route path="historial" element={<HistorialPage />} />
+          <Route path="historial/:id" element={<DetalleReportePage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

@@ -199,3 +199,6 @@ export const STEP_TITLES = [
 ] as const;
 
 export const DRAFT_STORAGE_KEY = "canmedseg_reporte_draft";
+
+/** Id del borrador `en_progreso` del servidor asociado a esta pestaña (RF-4). */
+export const DRAFT_ID_STORAGE_KEY = "canmedseg_reporte_draft_id";

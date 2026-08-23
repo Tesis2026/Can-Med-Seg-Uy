@@ -1,0 +1,425 @@
+/*
+ * Frames `Formularios en progreso`, `Historial de reportes enviados` y
+ * `Detalle de reporte enviado` del .pen (web y mobile).
+ */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.titleBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.title {
+  color: var(--color-text);
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.subtitle {
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
+.back {
+  color: var(--color-primary);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  width: fit-content;
+}
+
+.back:hover {
+  text-decoration: underline;
+}
+
+.state {
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
+.error {
+  padding: 12px 16px;
+  border: 1px solid #b42318;
+  background: #fef3f2;
+  color: #912018;
+  font-size: 14px;
+}
+
+/* Buscador (frame `searchRow` del .pen) */
+.searchRow {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.search {
+  width: 100%;
+  height: 40px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  padding: 0 14px;
+  color: var(--color-text);
+  border-radius: 0;
+  font-size: 14px;
+}
+
+.search::placeholder {
+  color: var(--color-placeholder);
+}
+
+/* Tabla (frame `tableCard` / `tableD` del .pen) */
+.tableCard {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+}
+
+.thead {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: #f5f5f5;
+  padding: 12px 20px;
+}
+
+.th {
+  color: #333333;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  border-top: 1px solid #eeeeee;
+}
+
+.thead + .row {
+  border-top: none;
+}
+
+.colMain {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.colDate {
+  width: 160px;
+  flex-shrink: 0;
+}
+
+.colStatus {
+  width: 200px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.colActions {
+  width: 220px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.colLink {
+  width: 100px;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.patient {
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.summary {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.date {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.mobileMeta {
+  display: none;
+}
+
+/* Estados del reporte (RF-5.5); los colores siguen la bandeja del .pen. */
+.status {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.statusEnRevision {
+  color: #d97706;
+}
+
+.statusAprobadoLocal,
+.statusEnviadoMsp {
+  color: #166534;
+}
+
+.statusAprobadoMsp {
+  color: #1a4a8c;
+}
+
+.statusRechazado {
+  color: #dc2626;
+}
+
+.statusHint {
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.primary {
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+  border: 1px solid var(--color-primary);
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.primary:hover {
+  filter: brightness(1.06);
+}
+
+.danger {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #dc2626;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.confirmText {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.linkButton {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--color-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.linkButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.link {
+  color: var(--color-primary);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.empty {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  padding: 32px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.emptyText {
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
+/* Detalle del reporte enviado (frame `cardD` del .pen) */
+.detailHead {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.detailTitle {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.detailPatient {
+  color: var(--color-text);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.detailMeta {
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
+.readonlyNote {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.detailCard {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  padding: 28px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.detailSection {
+  color: var(--color-text);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.detailGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.detailField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.detailFieldWide {
+  grid-column: 1 / -1;
+}
+
+.detailLabel {
+  color: #333333;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.detailValue {
+  background: #f5f5f5;
+  border: 1px solid #e5e5e5;
+  padding: 10px 12px;
+  color: var(--color-text);
+  font-size: 14px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.detailSubcard {
+  border: 1px solid #e5e5e5;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.detailSubtitle {
+  color: var(--color-primary);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+@media (max-width: 860px) {
+  .thead {
+    display: none;
+  }
+
+  .tableCard {
+    border: none;
+    background: none;
+    gap: 12px;
+  }
+
+  .row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    padding: 16px;
+  }
+
+  .colDate,
+  .colStatus,
+  .colActions,
+  .colLink {
+    width: auto;
+  }
+
+  .colActions {
+    justify-content: flex-start;
+  }
+
+  .colActions .primary {
+    flex: 1 1 auto;
+    text-align: center;
+  }
+
+  .colLink {
+    justify-content: flex-start;
+  }
+
+  .detailGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .detailCard {
+    padding: 20px 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  .title {
+    font-size: 22px;
+  }
+}

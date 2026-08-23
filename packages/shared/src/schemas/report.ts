@@ -1,7 +1,14 @@
 import { z } from "zod";
 
-import { REPORT_STATUSES, ReportStatus } from "../enums/report-status";
-import type { ReportStatus as ReportStatusType } from "../enums/report-status";
+import {
+  REPORT_STATUSES,
+  ReportStatus,
+  SUBMITTED_REPORT_STATUSES,
+} from "../enums/report-status";
+import type {
+  ReportStatus as ReportStatusType,
+  SubmittedReportStatus as SubmittedReportStatusType,
+} from "../enums/report-status";
 
 /**
  * Esquema del formulario de notificación alineado a:
@@ -13,6 +20,14 @@ import type { ReportStatus as ReportStatusType } from "../enums/report-status";
 
 const reportStatusEnum = z.enum(
   REPORT_STATUSES as [ReportStatusType, ...ReportStatusType[]],
+);
+
+/** Estados posibles de un reporte ya enviado (todo menos `en_progreso`). */
+export const submittedReportStatusSchema = z.enum(
+  SUBMITTED_REPORT_STATUSES as unknown as [
+    SubmittedReportStatusType,
+    ...SubmittedReportStatusType[],
+  ],
 );
 
 /** Sección — Información general del paciente (vars. 1–9). */
@@ -331,11 +346,91 @@ export const createdReportSchema = z.object({
 
 export type CreatedReport = z.infer<typeof createdReportSchema>;
 
-export const reportDetailSchema = createdReportSchema.extend({
+export const reportDetailSchema = z.object({
+  id: z.string().uuid(),
+  status: submittedReportStatusSchema,
+  createdAt: z.string().datetime(),
+  submittedAt: z.string().datetime(),
   report: adverseEventReportDraftSchema,
 });
 
 export type ReportDetail = z.infer<typeof reportDetailSchema>;
+
+/**
+ * Cuerpo del POST de envío. El reporte va anidado para poder acompañarlo de la
+ * verificación del CAPTCHA (RF-3.6, obligatoria solo sin sesión) y del borrador
+ * que se está enviando (RF-4: se convierte en el reporte, no se duplica).
+ */
+export const submitReportRequestSchema = z.object({
+  report: submitAdverseEventReportSchema,
+  /** Borrador `en_progreso` del que proviene el envío (solo usuarios logueados). */
+  draftId: z.string().uuid().optional(),
+  /** Token devuelto por `POST /api/captcha/verify`; exigido a los visitantes. */
+  captchaToken: z.string().min(1).optional(),
+});
+
+export type SubmitReportRequest = z.infer<typeof submitReportRequestSchema>;
+
+/* ------------------------------------------------------------------ *
+ * Borradores (RF-4) — solo usuarios logueados.
+ * ------------------------------------------------------------------ */
+
+/** Autoguardado al pasar de sección (RF-4.2): el contenido es permisivo. */
+export const saveReportDraftInputSchema = z.object({
+  report: adverseEventReportDraftSchema,
+});
+
+export type SaveReportDraftInput = z.infer<typeof saveReportDraftInputSchema>;
+
+/** Fila de la vista «Formularios en progreso» (RF-4.5). */
+export const reportDraftSummarySchema = z.object({
+  id: z.string().uuid(),
+  /** Iniciales del paciente ya cargadas; vacío si el borrador aún no llegó ahí. */
+  patientInitials: z.string(),
+  patientNationalId: z.string(),
+  currentStep: z.number().int().min(1).max(5),
+  updatedAt: z.string().datetime(),
+  /** Caducidad por inactividad (plan-arquitectura.md: 90 días). */
+  expiresAt: z.string().datetime(),
+});
+
+export type ReportDraftSummary = z.infer<typeof reportDraftSummarySchema>;
+
+export const reportDraftDetailSchema = reportDraftSummarySchema.extend({
+  report: adverseEventReportDraftSchema,
+});
+
+export type ReportDraftDetail = z.infer<typeof reportDraftDetailSchema>;
+
+export const reportDraftSummaryListSchema = z.array(reportDraftSummarySchema);
+
+/* ------------------------------------------------------------------ *
+ * Historial propio (RF-6).
+ * ------------------------------------------------------------------ */
+
+export const reportHistoryItemSchema = z.object({
+  id: z.string().uuid(),
+  status: submittedReportStatusSchema,
+  submittedAt: z.string().datetime(),
+  patientInitials: z.string(),
+  patientNationalId: z.string(),
+  adverseEventDescription: z.string(),
+});
+
+export type ReportHistoryItem = z.infer<typeof reportHistoryItemSchema>;
+
+export const reportHistoryListSchema = z.array(reportHistoryItemSchema);
+
+/**
+ * Contadores de la home del notificador (pantalla «Home usuario común»):
+ * los propios y el total nacional de reportes enviados.
+ */
+export const notifierStatsSchema = z.object({
+  ownSubmitted: z.number().int().nonnegative(),
+  totalSubmitted: z.number().int().nonnegative(),
+});
+
+export type NotifierStats = z.infer<typeof notifierStatsSchema>;
 
 export function createEmptyReportDraft(): AdverseEventReportDraft {
   return adverseEventReportDraftSchema.parse({});
