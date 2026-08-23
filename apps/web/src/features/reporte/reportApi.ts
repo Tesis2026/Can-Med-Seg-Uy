@@ -4,11 +4,14 @@ import {
   type CreatedReport,
 } from "@canmedseg/shared";
 
-const API_BASE_URL = (import.meta.env.VITE_API_URL ?? "").replace(/\/$/, "");
+import { apiUrl } from "../../lib/api";
 
 export async function submitReport(report: AdverseEventReportDraft): Promise<CreatedReport> {
-  const response = await fetch(`${API_BASE_URL}/api/reports`, {
+  const response = await fetch(apiUrl("/api/reports"), {
     method: "POST",
+    // La sesión viaja en cookie httpOnly: sin esto el reporte de un usuario
+    // logueado quedaría guardado como anónimo.
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(report),
   });

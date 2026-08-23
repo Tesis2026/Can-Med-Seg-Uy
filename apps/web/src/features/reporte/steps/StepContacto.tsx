@@ -98,7 +98,7 @@ export function StepContacto({ draft, errors, onChange }: StepContactoProps) {
         />
       </Field>
 
-      <Field label="Apellidos(s)" htmlFor="f-apellido" error={errors.lastName}>
+      <Field label="Apellido/s" htmlFor="f-apellido" error={errors.lastName}>
         <TextInput
           id="f-apellido"
           value={c.lastName ?? ""}

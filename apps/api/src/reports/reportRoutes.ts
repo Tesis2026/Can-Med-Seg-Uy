@@ -11,9 +11,13 @@ import { createReport, getReport } from "./reportRepository";
 const reportParamsSchema = z.object({ id: z.string().uuid() });
 
 export const reportRoutes: FastifyPluginAsync = async (app) => {
+  /**
+   * Envío del reporte. SIN guard a propósito: un visitante anónimo debe poder
+   * notificar (RF-1.2 / RF-3). Si hay sesión, el reporte queda asociado a ella.
+   */
   app.post("/reports", async (request, reply) => {
     const report = submitAdverseEventReportSchema.parse(request.body);
-    const created = await createReport(pool, report);
+    const created = await createReport(pool, report, request.auth.user?.id ?? null);
     return reply.code(201).send(created);
   });
 

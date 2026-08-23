@@ -45,7 +45,7 @@
 
 .logoText {
   color: var(--color-primary);
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 600;
   text-align: center;
   line-height: 1.2;
@@ -60,10 +60,66 @@
 }
 
 .menuArea {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 6px;
   flex-shrink: 0;
+}
+
+.menuPanel {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 900;
+  min-width: 260px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  display: flex;
+  flex-direction: column;
+  padding: 8px 0;
+}
+
+.menuUser {
+  padding: 8px 16px 12px;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 4px;
+}
+
+.menuUserName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.menuUserRoles {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.menuItem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  padding: 10px 16px;
+  font-size: 13px;
+  color: var(--color-text);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.menuItem:hover {
+  background: var(--color-surface-muted);
+}
+
+.menuFootnote {
+  padding: 8px 16px 4px;
+  font-size: 12px;
+  color: var(--color-text-muted);
 }
 
 .menuBtn {
@@ -99,17 +155,11 @@
 }
 
 .footerText {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--color-text-muted);
   text-align: center;
 }
 
-.footerPowered {
-  display: none;
-  font-size: 11px;
-  color: var(--color-text-muted);
-  text-align: center;
-}
 
 @media (max-width: 640px) {
   .headerInner {
@@ -121,11 +171,11 @@
   }
 
   .logoText {
-    font-size: 8px;
+    font-size: 11px;
   }
 
   .headerTitle {
-    font-size: 13px;
+    font-size: 14px;
   }
 
   .main {
@@ -139,7 +189,4 @@
     padding: 8px 16px;
   }
 
-  .footerPowered {
-    display: block;
-  }
 }
