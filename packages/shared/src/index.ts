@@ -1,7 +1,12 @@
 export {
   ReportStatus,
   REPORT_STATUSES,
+  SUBMITTED_REPORT_STATUSES,
+  REPORT_STATUS_LABELS,
+  REPORT_STATUS_DESCRIPTIONS,
+  isSubmittedReportStatus,
   type ReportStatus as ReportStatusValue,
+  type SubmittedReportStatus,
 } from "./enums/report-status";
 
 export {
@@ -56,6 +61,15 @@ export {
   contactSchema,
   adverseEventReportDraftSchema,
   submitAdverseEventReportSchema,
+  submitReportRequestSchema,
+  saveReportDraftInputSchema,
+  reportDraftSummarySchema,
+  reportDraftDetailSchema,
+  reportDraftSummaryListSchema,
+  reportHistoryItemSchema,
+  reportHistoryListSchema,
+  notifierStatsSchema,
+  submittedReportStatusSchema,
   createdReportSchema,
   reportDetailSchema,
   seriousnessCriterionSchema,
@@ -72,9 +86,24 @@ export {
   type Contact,
   type AdverseEventReportDraft,
   type SubmitAdverseEventReport,
+  type SubmitReportRequest,
+  type SaveReportDraftInput,
+  type ReportDraftSummary,
+  type ReportDraftDetail,
+  type ReportHistoryItem,
+  type NotifierStats,
   type CreatedReport,
   type ReportDetail,
   type SeriousnessCriterion,
   type SeverityGrade,
   type Causality,
 } from "./schemas/report";
+
+export {
+  captchaChallengeSchema,
+  captchaAnswerInputSchema,
+  captchaVerificationSchema,
+  type CaptchaChallenge,
+  type CaptchaAnswerInput,
+  type CaptchaVerification,
+} from "./schemas/captcha";

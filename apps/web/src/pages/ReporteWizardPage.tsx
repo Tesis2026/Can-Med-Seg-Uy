@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ReportStatus } from "@canmedseg/shared";
 
 import {
@@ -9,6 +9,7 @@ import {
   setConsentInicioAccepted,
 } from "../components/consent";
 import { useSession } from "../features/auth/SessionContext";
+import { CaptchaField } from "../features/captcha/CaptchaField";
 import { ProgressBar } from "../features/reporte/ProgressBar";
 import { submitReport } from "../features/reporte/reportApi";
 import { STEP_TITLES } from "../features/reporte/options";
@@ -22,15 +23,49 @@ import { useReportDraft } from "../features/reporte/useReportDraft";
 import { validateStep, type StepErrors } from "../features/reporte/validate";
 import { WizardNav } from "../features/reporte/WizardNav";
 
+function formatSavedAt(date: Date): string {
+  return date.toLocaleTimeString("es-UY", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+}
+
 export function ReporteWizardPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { session, consentPending, loading: sessionLoading } = useSession();
-  const { draft, draftRef, updateDraft, clearDraft } = useReportDraft();
+
+  // La URL solo transporta la intención inicial; después se limpia.
+  const [resumeId] = useState(() => searchParams.get("borrador"));
+  const [startFresh] = useState(() => searchParams.has("nuevo"));
+
+  const persistDrafts = session.authenticated;
+  const {
+    draft,
+    draftRef,
+    draftId,
+    updateDraft,
+    clearDraft,
+    saveDraft,
+    saveState,
+    savedAt,
+    saveError,
+    resuming,
+    resumeError,
+  } = useReportDraft({ persist: persistDrafts, resumeId, startFresh });
+
   const [errors, setErrors] = useState<StepErrors>({});
   const [showFinalConsent, setShowFinalConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [consentAccepted, setConsentAccepted] = useState(() => hasConsentInicioAccepted());
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!searchParams.has("borrador") && !searchParams.has("nuevo")) return;
+    setSearchParams({}, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   /**
    * El consentimiento se pide antes de empezar el reporte (notas de cliente).
@@ -45,6 +80,16 @@ export function ReporteWizardPage() {
     }
   }, [sessionLoading, consentAccepted, session.authenticated, consentPending]);
 
+  /** Autoguardado también al abandonar el asistente sin cambiar de sección. */
+  const saveDraftRef = useRef(saveDraft);
+  saveDraftRef.current = saveDraft;
+  useEffect(
+    () => () => {
+      void saveDraftRef.current({ keepalive: true });
+    },
+    [],
+  );
+
   const step = draft.currentStep;
   const title = STEP_TITLES[step - 1];
 
@@ -55,6 +100,8 @@ export function ReporteWizardPage() {
       status: ReportStatus.EnProgreso,
     }));
     setErrors({});
+    // RF-4.2: el guardado parcial se dispara al pasar de sección.
+    void saveDraft();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -82,7 +129,7 @@ export function ReporteWizardPage() {
     setSubmitting(true);
     setSubmitError(null);
     try {
-      const created = await submitReport(draftRef.current);
+      const created = await submitReport(draftRef.current, { draftId, captchaToken });
       clearDraft();
       navigate("/reporte/exito", { state: { reportId: created.id } });
       setShowFinalConsent(false);
@@ -92,11 +139,17 @@ export function ReporteWizardPage() {
           ? error.message
           : "No se pudo registrar el reporte. Intente nuevamente.",
       );
+      // El comprobante del CAPTCHA es de un solo uso: hay que resolver otro.
+      setCaptchaToken(null);
       setShowFinalConsent(false);
     } finally {
       setSubmitting(false);
     }
   }
+
+  const handleCaptchaVerified = useCallback((token: string | null) => {
+    setCaptchaToken(token);
+  }, []);
 
   if (!consentAccepted) {
     return (
@@ -111,11 +164,21 @@ export function ReporteWizardPage() {
     );
   }
 
+  if (resuming) {
+    return <p className={styles.loading}>Abriendo el borrador…</p>;
+  }
+
   return (
     <>
       <section className={styles.card}>
         <ProgressBar step={step} />
         <h1 className={styles.title}>{title}</h1>
+
+        {resumeError ? (
+          <p className={styles.submitError} role="alert">
+            {resumeError}
+          </p>
+        ) : null}
 
         {submitError ? (
           <p className={styles.submitError} role="alert">
@@ -175,11 +238,17 @@ export function ReporteWizardPage() {
           ) : null}
         </div>
 
+        {/* RF-3.6: la verificación solo se pide a quien no inició sesión. */}
+        {step === 5 && !session.authenticated ? (
+          <CaptchaField onVerified={handleCaptchaVerified} />
+        ) : null}
+
         <WizardNav
           step={step}
           onPrev={handlePrev}
           onNext={handleNext}
           onSubmit={handleSubmitClick}
+          submitDisabled={!session.authenticated && !captchaToken}
           emailReceipt={draft.contact.sendEmailReceipt}
           onEmailReceiptChange={(sendEmailReceipt) =>
             updateDraft((prev) => ({
@@ -187,6 +256,13 @@ export function ReporteWizardPage() {
               contact: { ...prev.contact, sendEmailReceipt },
             }))
           }
+        />
+
+        <DraftStatus
+          persist={persistDrafts}
+          state={saveState}
+          savedAt={savedAt}
+          error={saveError}
         />
       </section>
 
@@ -199,5 +275,51 @@ export function ReporteWizardPage() {
         }}
       />
     </>
+  );
+}
+
+type DraftStatusProps = {
+  persist: boolean;
+  state: "idle" | "saving" | "saved" | "error";
+  savedAt: Date | null;
+  error: string | null;
+};
+
+/** Mensaje de estado del guardado parcial (RF-4.2) / aviso al visitante (RF-4.4). */
+function DraftStatus({ persist, state, savedAt, error }: DraftStatusProps) {
+  if (!persist) {
+    return (
+      <p className={styles.draftNotice}>
+        Está reportando sin iniciar sesión: el formulario no se guarda como borrador ni
+        queda en un historial. Inicie sesión con GUB UY si quiere retomarlo más tarde.
+      </p>
+    );
+  }
+
+  if (state === "error") {
+    return (
+      <p className={styles.draftError} role="alert">
+        {error ?? "No se pudo guardar el borrador."}
+      </p>
+    );
+  }
+
+  if (state === "saving") {
+    return <p className={styles.draftNotice}>Guardando borrador…</p>;
+  }
+
+  if (state === "saved" && savedAt) {
+    return (
+      <p className={styles.draftNotice} role="status">
+        Borrador guardado a las {formatSavedAt(savedAt)}. Puede retomarlo desde
+        «Formularios en progreso».
+      </p>
+    );
+  }
+
+  return (
+    <p className={styles.draftNotice}>
+      El formulario se guarda automáticamente al pasar de sección.
+    </p>
   );
 }

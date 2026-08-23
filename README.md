@@ -46,3 +46,27 @@ variables `OIDC_*` del `.env`.
 
 También se puede usar la app **sin iniciar sesión** (modo visitante): se puede
 llenar y enviar un reporte, pero no hay borradores ni historial.
+
+## Reportar sin sesión: CAPTCHA (RF-3.6)
+
+Antes de enviar, un visitante debe resolver una **verificación de seguridad**. El
+desafío lo genera y lo valida la API (`POST /api/captcha/challenge` y
+`/api/captcha/verify`): la imagen se dibuja en el servidor y la respuesta nunca
+viaja al navegador. Resolverlo devuelve un comprobante **de un solo uso** que se
+adjunta al `POST /api/reports`; los usuarios logueados no lo necesitan.
+
+Vencimientos y cantidad de intentos se configuran con las variables `CAPTCHA_*`
+del `.env`. Cambiar a un proveedor externo (Turnstile, reCAPTCHA) solo afecta a
+`apps/api/src/captcha/`.
+
+## Borradores e historial
+
+Con sesión iniciada, el formulario se guarda solo al pasar de sección: el reporte
+queda en estado `en_progreso` y aparece en **Formularios en progreso**, desde
+donde se retoma o se elimina. Al enviarlo, esa misma fila pasa a `en_revisión`,
+así que el reporte conserva su identificador y aparece en el **Historial de
+reportes enviados** con su estado.
+
+Los borradores caducan por inactividad según `DRAFT_RETENTION_DAYS` (90 días por
+defecto). Un visitante no tiene borradores ni historial: si cierra la pestaña sin
+enviar, el formulario se descarta.

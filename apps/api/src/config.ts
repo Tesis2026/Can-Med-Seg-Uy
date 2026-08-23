@@ -49,6 +49,15 @@ const environmentSchema = z.object({
    * entra. En producción los roles solo los otorga el administrador (RF-2.4).
    */
   MOCK_IDP_SEED_ROLES: booleanFlag("true"),
+
+  /** CAPTCHA del envío anónimo (RF-3.6). */
+  CAPTCHA_CHALLENGE_TTL_MINUTES: z.coerce.number().int().positive().default(5),
+  /** Validez del comprobante emitido al resolverlo, hasta enviar el reporte. */
+  CAPTCHA_TOKEN_TTL_MINUTES: z.coerce.number().int().positive().default(20),
+  CAPTCHA_MAX_ATTEMPTS: z.coerce.number().int().positive().default(4),
+
+  /** Caducidad de los borradores por inactividad (RF-4 / plan-arquitectura.md). */
+  DRAFT_RETENTION_DAYS: z.coerce.number().int().positive().default(90),
 });
 
 export const config = environmentSchema.parse(process.env);
@@ -58,3 +67,9 @@ export const isMockIdentityProvider = config.AUTH_PROVIDER === "mock";
 export const sessionTtlMs = config.SESSION_TTL_HOURS * 60 * 60 * 1000;
 
 export const loginStateTtlMs = config.OIDC_LOGIN_STATE_TTL_MINUTES * 60 * 1000;
+
+export const captchaChallengeTtlMs = config.CAPTCHA_CHALLENGE_TTL_MINUTES * 60 * 1000;
+
+export const captchaTokenTtlMs = config.CAPTCHA_TOKEN_TTL_MINUTES * 60 * 1000;
+
+export const draftRetentionMs = config.DRAFT_RETENTION_DAYS * 24 * 60 * 60 * 1000;
