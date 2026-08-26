@@ -9,6 +9,32 @@ Sistema de Farmacovigilancia de Cannabis Medicinal (Uruguay).
 - Node.js >= 20
 - PostgreSQL con una base y un rol accesibles desde `DATABASE_URL`
 
+### Crear la base de datos local
+
+Con PostgreSQL instalado en Windows, abrir `psql` como administrador (ajustar la
+versión de la ruta si corresponde):
+
+```powershell
+& "C:\Program Files\PostgreSQL\18\bin\psql.exe" -U postgres
+```
+
+Dentro de `psql`, crear el rol y la base. Estos comandos se ejecutan una sola vez:
+
+```sql
+CREATE ROLE canmedseg WITH LOGIN PASSWORD 'canmedseg';
+CREATE DATABASE canmedseg OWNER canmedseg;
+\q
+```
+
+La URL resultante coincide con el valor de desarrollo de `.env.example`:
+
+```dotenv
+DATABASE_URL=postgresql://canmedseg:canmedseg@localhost:5432/canmedseg
+```
+
+La creación del rol y la base prepara PostgreSQL; las tablas se crean y actualizan
+después con `npm run db:migrate`.
+
 ## Puesta en marcha
 
 ```bash
