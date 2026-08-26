@@ -5,6 +5,7 @@ import { ReportStatus } from "@canmedseg/shared";
 import {
   ConsentFinalModal,
   ConsentInicioModal,
+  clearConsentInicioAccepted,
   hasConsentInicioAccepted,
   setConsentInicioAccepted,
 } from "../components/consent";
@@ -32,9 +33,21 @@ function formatSavedAt(date: Date): string {
 }
 
 export function ReporteWizardPage() {
+  const { user, loading } = useSession();
+
+  // Hasta saber quién es, no se carga nada: el borrador guardado en la pestaña
+  // puede ser de otra persona. La clave remonta el asistente al cambiar de
+  // usuario, para que el formulario nunca se herede entre sesiones.
+  if (loading) return <p className={styles.loading}>Cargando…</p>;
+
+  const ownerId = user?.id ?? null;
+  return <ReporteWizard key={ownerId ?? "visitante"} ownerId={ownerId} />;
+}
+
+function ReporteWizard({ ownerId }: { ownerId: string | null }) {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { session, consentPending, loading: sessionLoading } = useSession();
+  const { session, acceptConsent } = useSession();
 
   // La URL solo transporta la intención inicial; después se limpia.
   const [resumeId] = useState(() => searchParams.get("borrador"));
@@ -53,32 +66,23 @@ export function ReporteWizardPage() {
     saveError,
     resuming,
     resumeError,
-  } = useReportDraft({ persist: persistDrafts, resumeId, startFresh });
+  } = useReportDraft({ persist: persistDrafts, resumeId, startFresh, ownerId });
 
   const [errors, setErrors] = useState<StepErrors>({});
   const [showFinalConsent, setShowFinalConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [consentAccepted, setConsentAccepted] = useState(() => hasConsentInicioAccepted());
+  const [consentAccepted, setConsentAccepted] = useState(() => {
+    if (startFresh) return false;
+    if (resumeId) return true;
+    return hasConsentInicioAccepted();
+  });
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   useEffect(() => {
     if (!searchParams.has("borrador") && !searchParams.has("nuevo")) return;
     setSearchParams({}, { replace: true });
   }, [searchParams, setSearchParams]);
-
-  /**
-   * El consentimiento se pide antes de empezar el reporte (notas de cliente).
-   * Quien ya lo aceptó al iniciar sesión no lo vuelve a ver; el visitante anónimo
-   * lo acepta acá mismo en vez de ser expulsado al inicio.
-   */
-  useEffect(() => {
-    if (sessionLoading || consentAccepted) return;
-    if (session.authenticated && !consentPending) {
-      setConsentInicioAccepted();
-      setConsentAccepted(true);
-    }
-  }, [sessionLoading, consentAccepted, session.authenticated, consentPending]);
 
   /** Autoguardado también al abandonar el asistente sin cambiar de sección. */
   const saveDraftRef = useRef(saveDraft);
@@ -131,6 +135,7 @@ export function ReporteWizardPage() {
     try {
       const created = await submitReport(draftRef.current, { draftId, captchaToken });
       clearDraft();
+      clearConsentInicioAccepted();
       navigate("/reporte/exito", { state: { reportId: created.id } });
       setShowFinalConsent(false);
     } catch (error) {
@@ -151,14 +156,23 @@ export function ReporteWizardPage() {
     setCaptchaToken(token);
   }, []);
 
+  async function handleConsentAccept() {
+    setConsentInicioAccepted();
+    setConsentAccepted(true);
+    if (!session.authenticated) return;
+    try {
+      // Deja registrada la versión aceptada para poder auditarla (Ley 18.331).
+      await acceptConsent();
+    } catch (error) {
+      console.error("No se pudo registrar el consentimiento", error);
+    }
+  }
+
   if (!consentAccepted) {
     return (
       <ConsentInicioModal
         open
-        onAccept={() => {
-          setConsentInicioAccepted();
-          setConsentAccepted(true);
-        }}
+        onAccept={() => void handleConsentAccept()}
         onCancel={() => navigate("/", { replace: true })}
       />
     );

@@ -30,7 +30,7 @@ export const REPORT_STATUS_LABELS: Record<ReportStatus, string> = {
   [ReportStatus.EnProgreso]: "En progreso",
   [ReportStatus.EnRevision]: "En revisión",
   [ReportStatus.AprobadoLocal]: "Aprobado para análisis",
-  [ReportStatus.AprobadoMsp]: "Aprobado — envío al MSP pendiente",
+  [ReportStatus.AprobadoMsp]: "Aprobado, con envío al MSP pendiente",
   [ReportStatus.EnviadoMsp]: "Enviado al MSP",
   [ReportStatus.Rechazado]: "Rechazado",
 };

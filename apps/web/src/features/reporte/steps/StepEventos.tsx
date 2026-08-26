@@ -115,7 +115,7 @@ export function StepEventos({ draft, errors, onChange }: StepEventosProps) {
               label="Fecha de inicio del evento adverso"
               required
               error={errors[`events.${index}.startDate`]}
-              hint="dd/mm/aaaa — desde la fecha de nacimiento hasta hoy"
+              hint="Formato dd/mm/aaaa. Debe estar entre la fecha de nacimiento y hoy"
             >
               <DateTriple
                 idPrefix={`ev-${index}-start`}
@@ -151,7 +151,7 @@ export function StepEventos({ draft, errors, onChange }: StepEventosProps) {
             <Field
               label="Duración del evento adverso"
               htmlFor={`ev-${index}-dur`}
-              hint="Días — se calcula automáticamente con las fechas de inicio y fin"
+              hint="Se calcula en días con las fechas de inicio y fin"
             >
               <UnitInput
                 id={`ev-${index}-dur`}

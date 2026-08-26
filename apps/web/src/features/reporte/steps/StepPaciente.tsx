@@ -126,7 +126,7 @@ export function StepPaciente({ draft, errors, onChange }: StepPacienteProps) {
       <Field
         label="Índice de masa corporal"
         htmlFor="f-imc"
-        hint="kg/m² — se calcula a partir de peso y talla"
+        hint="Se calcula en kg/m² a partir del peso y la talla"
       >
         <TextInput
           id="f-imc"
@@ -159,7 +159,7 @@ export function StepPaciente({ draft, errors, onChange }: StepPacienteProps) {
       <Field
         label="Edad al comienzo del evento adverso"
         htmlFor="f-edad"
-        hint="Años — se calcula a partir de la fecha de nacimiento (y la fecha de inicio del evento, si ya está cargada)"
+        hint="Se calcula en años con la fecha de nacimiento y, si ya está cargada, la fecha de inicio del evento"
       >
         <TextInput
           id="f-edad"

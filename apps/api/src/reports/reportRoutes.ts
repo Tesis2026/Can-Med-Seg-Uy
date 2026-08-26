@@ -19,6 +19,7 @@ import {
   getDraft,
   getNotifierStats,
   getReport,
+  getReviewSummary,
   listDrafts,
   listOwnReports,
   updateDraft,
@@ -158,6 +159,13 @@ export const reportRoutes: FastifyPluginAsync = async (app) => {
     "/reports/stats",
     { preHandler: requirePermission(Permission.ReportHistoryRead) },
     async (request, reply) => reply.send(await getNotifierStats(pool, sessionUserId(request))),
+  );
+
+  /** Resumen de la carga de revisión; solo para quien valida reportes (RF-5). */
+  app.get(
+    "/reports/review-summary",
+    { preHandler: requirePermission(Permission.ReportReview) },
+    async (_request, reply) => reply.send(await getReviewSummary(pool)),
   );
 
   /** Detalle de un reporte enviado: su notificador o un revisor (RNF-1.2). */

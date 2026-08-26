@@ -28,15 +28,15 @@ puerto, definí `API_PROXY_TARGET` en el `.env`.
 La app usa OIDC / Authorization Code Flow + PKCE. En desarrollo, `AUTH_PROVIDER=mock`
 levanta un **IdP simulado** en `/mock-idp` con cuentas de prueba:
 
-| Cuenta | Roles |
+| Cuenta | Rol |
 | --- | --- |
-| María González | usuario común |
-| Diego Pereira | profesional de la salud (médico) |
-| Laura Silva | profesional de la salud (químico/a farmacéutico/a) |
-| Carlos Méndez | investigador |
-| Valeria Techera | validador MSP |
-| Sofía Barrios | profesional de la salud (médica) + investigadora |
-| Ana Rodríguez | administrador |
+| María González | Usuario común |
+| Diego Pereira | Profesional de la salud (médico) |
+| Carlos Méndez | Investigador |
+| Ana Rodríguez | Administrador |
+
+Todas incluyen el rol de usuario común: cualquiera de ellas puede reportar, guardar
+borradores y ver su historial, además de lo propio de su rol.
 
 Los roles de la cuenta mock se siembran **solo en su primer ingreso**
 (`MOCK_IDP_SEED_ROLES=true`); después los administra el administrador del sistema.

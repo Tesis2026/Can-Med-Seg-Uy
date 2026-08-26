@@ -320,7 +320,7 @@ export function StepMedicamentos({
             <Field
               label="Fecha de inicio de la administración del medicamento"
               error={errors[`medicines.${index}.administrationStartDate`]}
-              hint="dd/mm/aaaa — desde la fecha de nacimiento hasta hoy"
+              hint="Formato dd/mm/aaaa. Debe estar entre la fecha de nacimiento y hoy"
             >
               <DateTriple
                 idPrefix={`med-${index}-start`}
@@ -366,7 +366,7 @@ export function StepMedicamentos({
             <Field
               label="Duración de la administración del medicamento"
               htmlFor={`med-${index}-dur`}
-              hint="Días — se calcula automáticamente con las fechas de inicio y fin"
+              hint="Se calcula en días con las fechas de inicio y fin"
             >
               <UnitInput
                 id={`med-${index}-dur`}
