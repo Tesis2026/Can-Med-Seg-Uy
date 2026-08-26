@@ -41,3 +41,11 @@ export const ROLE_LABELS: Record<Role, string> = {
 export function isAssignableRole(value: unknown): value is AssignableRole {
   return typeof value === "string" && (ASSIGNABLE_ROLES as readonly string[]).includes(value);
 }
+
+/**
+ * Roles que se muestran en la interfaz. `comun` y `anonimo` quedan fuera: son la
+ * base que tiene cualquiera y nombrarlos no le dice nada al usuario.
+ */
+export function visibleRoles(roles: readonly Role[]): Role[] {
+  return roles.filter((role) => role !== Role.Comun && role !== Role.Anonimo);
+}

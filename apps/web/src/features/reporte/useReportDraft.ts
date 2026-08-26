@@ -5,12 +5,62 @@ import {
   type AdverseEventReportDraft,
 } from "@canmedseg/shared";
 
+import { CONSENT_INICIO_STORAGE_KEY } from "../../components/consent";
 import { ApiError } from "../../lib/api";
-import { DRAFT_ID_STORAGE_KEY, DRAFT_STORAGE_KEY } from "./options";
+import {
+  DRAFT_ID_STORAGE_KEY,
+  DRAFT_OWNER_STORAGE_KEY,
+  DRAFT_STORAGE_KEY,
+} from "./options";
 import { createDraft, fetchDraft, updateDraft } from "./reportApi";
 
 function isNotFound(error: unknown): boolean {
   return error instanceof ApiError && error.status === 404;
+}
+
+/** Identidad del dueño del borrador; un visitante también es un dueño distinto. */
+function ownerKey(userId: string | null): string {
+  return userId ?? "visitante";
+}
+
+/**
+ * Borra el borrador de la pestaña, su id en el servidor y el consentimiento
+ * aceptado. Se usa al cerrar sesión y al detectar que lo guardado es de otra
+ * persona: nadie debe ver ni continuar el formulario de otro usuario.
+ */
+export function clearReportDraftStorage(): void {
+  for (const key of [
+    DRAFT_STORAGE_KEY,
+    DRAFT_ID_STORAGE_KEY,
+    DRAFT_OWNER_STORAGE_KEY,
+    CONSENT_INICIO_STORAGE_KEY,
+  ]) {
+    try {
+      sessionStorage.removeItem(key);
+    } catch {
+      // ignore quota / private mode
+    }
+  }
+}
+
+/**
+ * Descarta lo guardado si pertenece a otra sesión. Es síncrono a propósito: corre
+ * en el inicializador del estado, antes de que el formulario dibuje nada.
+ */
+function discardDraftOfOtherOwner(userId: string | null): void {
+  let stored: string | null = null;
+  try {
+    stored = sessionStorage.getItem(DRAFT_OWNER_STORAGE_KEY);
+  } catch {
+    return;
+  }
+  if (stored !== null && stored === ownerKey(userId)) return;
+  if (stored !== null) clearReportDraftStorage();
+  try {
+    sessionStorage.setItem(DRAFT_OWNER_STORAGE_KEY, ownerKey(userId));
+  } catch {
+    // ignore quota / private mode
+  }
 }
 
 function loadDraft(): AdverseEventReportDraft {
@@ -46,17 +96,15 @@ function writeStoredDraftId(id: string | null): void {
  * desde otro dispositivo o caducó), se crea uno nuevo en vez de quedar en error.
  */
 async function saveOrRecreate(
-  draftIdRef: { current: string | null },
+  targetId: string | null,
   report: AdverseEventReportDraft,
   options: { keepalive?: boolean },
 ) {
-  if (!draftIdRef.current) return createDraft(report, options);
+  if (!targetId) return createDraft(report, options);
   try {
-    return await updateDraft(draftIdRef.current, report, options);
+    return await updateDraft(targetId, report, options);
   } catch (error) {
     if (!isNotFound(error)) throw error;
-    draftIdRef.current = null;
-    writeStoredDraftId(null);
     return createDraft(report, options);
   }
 }
@@ -75,6 +123,8 @@ type UseReportDraftOptions = {
   resumeId?: string | null;
   /** Descarta lo que haya en la pestaña y arranca un formulario vacío. */
   startFresh?: boolean;
+  /** Usuario de la sesión; `null` para un visitante. Aísla el borrador por persona. */
+  ownerId: string | null;
 };
 
 /**
@@ -86,17 +136,24 @@ export function useReportDraft({
   persist,
   resumeId = null,
   startFresh = false,
+  ownerId,
 }: UseReportDraftOptions) {
-  const [draft, setDraft] = useState<AdverseEventReportDraft>(() =>
-    startFresh ? createEmptyReportDraft() : loadDraft(),
-  );
+  const [draft, setDraft] = useState<AdverseEventReportDraft>(() => {
+    discardDraftOfOtherOwner(ownerId);
+    return startFresh ? createEmptyReportDraft() : loadDraft();
+  });
   // La referencia la mantienen `updateDraftState`, el retomado y `clearDraft`;
   // no se reasigna en cada render para que nunca retroceda a un valor viejo.
   const draftRef = useRef(draft);
 
-  const [draftId, setDraftId] = useState<string | null>(() =>
-    startFresh ? null : readStoredDraftId(),
-  );
+  const [draftId, setDraftId] = useState<string | null>(() => {
+    if (startFresh) return null;
+    if (resumeId) {
+      writeStoredDraftId(resumeId);
+      return resumeId;
+    }
+    return readStoredDraftId();
+  });
   const draftIdRef = useRef(draftId);
 
   const [saveState, setSaveState] = useState<DraftSaveState>("idle");
@@ -105,6 +162,10 @@ export function useReportDraft({
   const [resuming, setResuming] = useState(Boolean(resumeId));
   const [resumeError, setResumeError] = useState<string | null>(null);
   const savingRef = useRef(false);
+  const aliveRef = useRef(true);
+  useEffect(() => () => {
+    aliveRef.current = false;
+  }, []);
 
   useEffect(() => {
     if (!startFresh) return;
@@ -197,13 +258,15 @@ export function useReportDraft({
       setSaveState("saving");
       setSaveError(null);
       try {
-        const summary = await saveOrRecreate(draftIdRef, current, options);
+        const summary = await saveOrRecreate(draftIdRef.current, current, options);
+        if (!aliveRef.current) return;
         draftIdRef.current = summary.id;
         setDraftId(summary.id);
         writeStoredDraftId(summary.id);
         setSavedAt(new Date(summary.updatedAt));
         setSaveState("saved");
       } catch (error) {
+        if (!aliveRef.current) return;
         setSaveState("error");
         setSaveError(
           error instanceof Error ? error.message : "No se pudo guardar el borrador.",

@@ -220,7 +220,7 @@ export function StepAdicional({ draft, errors, onChange }: StepAdicionalProps) {
                 <Field
                   label="Duración del uso del medicamento concomitante"
                   htmlFor={`conc-${index}-dur`}
-                  hint="Días — se calcula a partir de las fechas de inicio y fin"
+                  hint="Se calcula en días a partir de las fechas de inicio y fin"
                 >
                   <UnitInput
                     id={`conc-${index}-dur`}

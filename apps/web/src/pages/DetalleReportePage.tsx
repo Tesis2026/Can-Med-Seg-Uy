@@ -278,7 +278,7 @@ function ReportView({ detail }: { detail: ReportDetail }) {
                   value={yesNo(medicine.recentProductChange)}
                 />
                 <ReadOnlyField
-                  label="Cambio reciente — detalle"
+                  label="Detalle del cambio reciente"
                   value={medicine.recentProductChangeDetail}
                 />
                 <ReadOnlyField label="Indicación" value={medicine.indicationText} />

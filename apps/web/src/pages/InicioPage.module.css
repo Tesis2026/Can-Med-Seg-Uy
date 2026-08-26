@@ -90,6 +90,16 @@
   font-size: 12px;
 }
 
+/* KPI con atención pendiente (frame `kpiMsp` del .pen). */
+.statTileAlerta {
+  background: #fffbeb;
+  border: 1px solid #f59e0b;
+}
+
+.statValueAlerta {
+  color: #d97706;
+}
+
 .statsLead {
   color: var(--color-text);
   font-size: 15px;

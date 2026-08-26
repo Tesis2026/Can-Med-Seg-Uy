@@ -1,22 +1,26 @@
 import {
-  HEALTH_PROFESSION_SUBTYPE_LABELS,
+  Permission,
   ROLE_LABELS,
-  Role,
+  hasPermission,
+  visibleRoles,
   type NotifierStats,
+  type PermissionValue,
+  type ReviewSummary,
 } from "@canmedseg/shared";
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, Navigate } from "react-router-dom";
 
 import { useSession } from "../features/auth/SessionContext";
-import { fetchNotifierStats } from "../features/reporte/reportApi";
+import { fetchNotifierStats, fetchReviewSummary } from "../features/reporte/reportApi";
 
 import styles from "./InicioPage.module.css";
 
 const numberFormat = new Intl.NumberFormat("es-UY");
 
 /**
- * Frame «Home usuario común» del .pen: bienvenida, estadísticas de incentivo y
- * accesos a reportar, borradores (RF-4.5) e historial (RF-6.1).
+ * Home del usuario logueado. Sigue los frames «Home usuario común», «Home
+ * investigador» y «Home administrador» del .pen, pero solo muestra los accesos
+ * que la persona puede usar hoy según la matriz de permisos.
  */
 export function InicioPage() {
   const { session, user, loading } = useSession();
@@ -26,56 +30,65 @@ export function InicioPage() {
   }
 
   if (!session.authenticated || !user) {
-    return <Navigate to="/login?returnTo=%2Finicio" replace />;
+    return <Navigate to="/login" replace />;
   }
+
+  const permissions: readonly PermissionValue[] = session.permissions;
+  const puedeRevisar = hasPermission(permissions, Permission.ReportReview);
+  const roles = visibleRoles(user.roles.map((entry) => entry.role));
 
   return (
     <div className={styles.page}>
       <section className={styles.welcome}>
         <p className={styles.welcomeLabel}>Bienvenido/a</p>
         <h1 className={styles.welcomeName}>{user.displayName}</h1>
-        <ul className={styles.roleChips}>
-          {user.roles.map((entry) => (
-            <li key={entry.role} className={styles.chip}>
-              {ROLE_LABELS[entry.role]}
-              {entry.role === Role.ProfesionalSalud && entry.healthProfessionSubtype
-                ? ` · ${HEALTH_PROFESSION_SUBTYPE_LABELS[entry.healthProfessionSubtype]}`
-                : ""}
-            </li>
-          ))}
-        </ul>
+        {roles.length > 0 ? (
+          <ul className={styles.roleChips}>
+            {roles.map((role) => (
+              <li key={role} className={styles.chip}>
+                {ROLE_LABELS[role]}
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </section>
 
-      <SystemStats />
+      {/* El investigador ve la carga de revisión; el notificador, su aporte. */}
+      {puedeRevisar ? <ResumenOperativo /> : <EstadisticasDelSistema />}
 
       <h2 className={styles.sectionTitle}>Reportes</h2>
-
       <div className={styles.grid}>
-        <ActionCard
-          to="/reporte?nuevo=1"
-          icon={<IconNuevo />}
-          title="Nuevo reporte"
-          description="Iniciar un nuevo reporte."
-        />
-        <ActionCard
-          to="/formularios-en-progreso"
-          icon={<IconBorrador />}
-          title="Formularios en progreso"
-          description="Continuar reportes guardados sin enviar."
-        />
-        <ActionCard
-          to="/historial"
-          icon={<IconHistorial />}
-          title="Historial de reportes"
-          description="Consultar reportes enviados anteriormente."
-        />
+        {hasPermission(permissions, Permission.ReportSubmit) ? (
+          <ActionCard
+            to="/reporte?nuevo=1"
+            icon={<IconNuevo />}
+            title="Nuevo reporte"
+            description="Iniciar un nuevo reporte."
+          />
+        ) : null}
+        {hasPermission(permissions, Permission.ReportDraftWrite) ? (
+          <ActionCard
+            to="/formularios-en-progreso"
+            icon={<IconBorrador />}
+            title="Formularios en progreso"
+            description="Continuar reportes guardados sin enviar."
+          />
+        ) : null}
+        {hasPermission(permissions, Permission.ReportHistoryRead) ? (
+          <ActionCard
+            to="/historial"
+            icon={<IconHistorial />}
+            title="Historial de reportes"
+            description="Consultar reportes enviados anteriormente."
+          />
+        ) : null}
       </div>
     </div>
   );
 }
 
-/** Estadísticas del sistema: reportes propios y total nacional (notas de cliente). */
-function SystemStats() {
+/** Frame «Home usuario común»: reportes propios y total nacional. */
+function EstadisticasDelSistema() {
   const [stats, setStats] = useState<NotifierStats | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -94,12 +107,12 @@ function SystemStats() {
     };
   }, []);
 
-  if (failed) return null;
+  if (failed || !stats) return null;
 
-  const total = stats ? numberFormat.format(stats.totalSubmitted) : "—";
-  const own = stats ? numberFormat.format(stats.ownSubmitted) : "—";
+  const total = numberFormat.format(stats.totalSubmitted);
+  const own = numberFormat.format(stats.ownSubmitted);
   const totalFrase =
-    stats?.totalSubmitted === 1
+    stats.totalSubmitted === 1
       ? "El sistema ya registra 1 reporte de evento adverso en Uruguay."
       : `El sistema ya registra ${total} reportes de eventos adversos en Uruguay.`;
 
@@ -119,9 +132,55 @@ function SystemStats() {
       <p className={styles.statsLead}>
         ¡Gracias por contribuir! Cada reporte fortalece la farmacovigilancia nacional.
       </p>
-      <p className={styles.statsText}>
-        {totalFrase} Cada reporte ayuda a mejorar la farmacovigilancia.
-      </p>
+      <p className={styles.statsText}>{totalFrase} Cada reporte ayuda a mejorar la farmacovigilancia.</p>
+    </section>
+  );
+}
+
+/** Frame «Home investigador»: carga de trabajo de validación. */
+function ResumenOperativo() {
+  const [summary, setSummary] = useState<ReviewSummary | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const result = await fetchReviewSummary();
+        if (!cancelled) setSummary(result);
+      } catch {
+        if (!cancelled) setFailed(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (failed || !summary) return null;
+
+  const valor = (n: number) => numberFormat.format(n);
+  const hayPendientes = summary.envioMspPendiente > 0;
+
+  return (
+    <section className={styles.statsCard}>
+      <h2 className={styles.statsTitle}>Resumen operativo</h2>
+      <div className={styles.statsRow}>
+        <div className={styles.statTile}>
+          <p className={styles.statValue}>{valor(summary.enRevision)}</p>
+          <p className={styles.statLabel}>En revisión</p>
+        </div>
+        <div className={styles.statTile}>
+          <p className={styles.statValue}>{valor(summary.aprobados)}</p>
+          <p className={styles.statLabel}>Aprobados local / MSP</p>
+        </div>
+        <div className={`${styles.statTile} ${hayPendientes ? styles.statTileAlerta : ""}`}>
+          <p className={`${styles.statValue} ${hayPendientes ? styles.statValueAlerta : ""}`}>
+            {valor(summary.envioMspPendiente)}
+          </p>
+          <p className={styles.statLabel}>Envíos MSP pendientes</p>
+        </div>
+      </div>
     </section>
   );
 }

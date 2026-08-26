@@ -432,6 +432,18 @@ export const notifierStatsSchema = z.object({
 
 export type NotifierStats = z.infer<typeof notifierStatsSchema>;
 
+/**
+ * Contadores de la home del investigador (frame «Home investigador»): carga de
+ * trabajo de revisión sobre todos los reportes, no solo los propios.
+ */
+export const reviewSummarySchema = z.object({
+  enRevision: z.number().int().nonnegative(),
+  aprobados: z.number().int().nonnegative(),
+  envioMspPendiente: z.number().int().nonnegative(),
+});
+
+export type ReviewSummary = z.infer<typeof reviewSummarySchema>;
+
 export function createEmptyReportDraft(): AdverseEventReportDraft {
   return adverseEventReportDraftSchema.parse({});
 }
