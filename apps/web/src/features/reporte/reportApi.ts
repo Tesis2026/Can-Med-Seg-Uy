@@ -6,9 +6,11 @@ import {
   reportDraftSummaryListSchema,
   reportDraftSummarySchema,
   reportHistoryListSchema,
+  reviewSummarySchema,
   type AdverseEventReportDraft,
   type CreatedReport,
   type NotifierStats,
+  type ReviewSummary,
   type ReportDetail,
   type ReportDraftDetail,
   type ReportDraftSummary,
@@ -116,6 +118,14 @@ export async function fetchNotifierStats(): Promise<NotifierStats> {
   return notifierStatsSchema.parse(
     await apiFetch("/api/reports/stats", {
       fallbackMessage: "No se pudieron cargar las estadísticas.",
+    }),
+  );
+}
+
+export async function fetchReviewSummary(): Promise<ReviewSummary> {
+  return reviewSummarySchema.parse(
+    await apiFetch("/api/reports/review-summary", {
+      fallbackMessage: "No se pudo cargar el resumen de revisión.",
     }),
   );
 }

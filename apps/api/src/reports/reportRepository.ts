@@ -7,6 +7,7 @@ import {
   type ReportDraftDetail,
   type ReportDraftSummary,
   type ReportHistoryItem,
+  type ReviewSummary,
   type SubmitAdverseEventReport,
   type SubmittedReportStatus,
 } from "@canmedseg/shared";
@@ -476,5 +477,25 @@ export async function getNotifierStats(pool: Pool, userId: string): Promise<Noti
   return {
     ownSubmitted: Number(row?.own ?? 0),
     totalSubmitted: Number(row?.total ?? 0),
+  };
+}
+
+/** Carga de trabajo del investigador sobre todos los reportes (RF-5). */
+export async function getReviewSummary(pool: Pool): Promise<ReviewSummary> {
+  const result = await pool.query<{
+    en_revision: string;
+    aprobados: string;
+    envio_msp_pendiente: string;
+  }>(
+    `SELECT count(*) FILTER (WHERE status = 'en_revision') AS en_revision,
+            count(*) FILTER (WHERE status IN ('aprobado_local', 'enviado_msp')) AS aprobados,
+            count(*) FILTER (WHERE status = 'aprobado_msp') AS envio_msp_pendiente
+       FROM reports`,
+  );
+  const row = result.rows[0];
+  return {
+    enRevision: Number(row?.en_revision ?? 0),
+    aprobados: Number(row?.aprobados ?? 0),
+    envioMspPendiente: Number(row?.envio_msp_pendiente ?? 0),
   };
 }

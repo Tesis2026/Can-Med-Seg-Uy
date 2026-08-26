@@ -1,9 +1,4 @@
-import {
-  CONSENT_VERSION,
-  anonymousSession,
-  type Session,
-  type SessionUser,
-} from "@canmedseg/shared";
+import { anonymousSession, type Session, type SessionUser } from "@canmedseg/shared";
 import {
   createContext,
   useCallback,
@@ -22,8 +17,6 @@ type SessionState = {
   /** La API no responde: la app queda usable como visitante. */
   offline: boolean;
   user: SessionUser | null;
-  /** Falta aceptar el consentimiento vigente (primer login o versión nueva). */
-  consentPending: boolean;
   refresh: () => Promise<void>;
   acceptConsent: () => Promise<void>;
   logout: () => Promise<void>;
@@ -68,9 +61,6 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       loading,
       offline,
       user,
-      consentPending: Boolean(
-        user && (!user.consentAcceptedAt || user.consentVersion !== CONSENT_VERSION),
-      ),
       refresh,
       acceptConsent,
       logout,

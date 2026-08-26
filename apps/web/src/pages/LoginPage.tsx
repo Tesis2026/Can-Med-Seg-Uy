@@ -41,7 +41,7 @@ export function LoginPage() {
 
   useEffect(() => {
     if (!loading && session.authenticated) {
-      navigate(returnTo ?? "/inicio", { replace: true });
+      navigate(returnTo ?? "/", { replace: true });
     }
   }, [loading, session.authenticated, navigate, returnTo]);
 

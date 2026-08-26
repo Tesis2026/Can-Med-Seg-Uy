@@ -202,3 +202,9 @@ export const DRAFT_STORAGE_KEY = "canmedseg_reporte_draft";
 
 /** Id del borrador `en_progreso` del servidor asociado a esta pestaña (RF-4). */
 export const DRAFT_ID_STORAGE_KEY = "canmedseg_reporte_draft_id";
+
+/**
+ * Dueño del borrador que está en la pestaña. Si cambia la sesión, lo guardado
+ * pertenece a otra persona y se descarta antes de mostrarlo.
+ */
+export const DRAFT_OWNER_STORAGE_KEY = "canmedseg_reporte_draft_owner";

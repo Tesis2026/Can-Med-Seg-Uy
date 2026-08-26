@@ -1,24 +1,19 @@
-import { HEALTH_PROFESSION_SUBTYPE_LABELS, ROLE_LABELS, Role } from "@canmedseg/shared";
+import { ROLE_LABELS, visibleRoles } from "@canmedseg/shared";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import { useSession } from "../features/auth/SessionContext";
+import { clearReportDraftStorage } from "../features/reporte/useReportDraft";
 
 import styles from "./AppShell.module.css";
 
 export type AppShellProps = {
-  /** Título del header (p. ej. "Consentimiento"). Default: Reporte FV Uruguay */
-  title?: string;
-  /** Muestra el control "Menú" a la derecha. Landing lo oculta (false). Default: true */
+  /** Muestra el botón de menú a la derecha. La landing lo oculta. Default: true */
   showMenu?: boolean;
   children?: ReactNode;
 };
 
-export function AppShell({
-  title = "Reporte FV Uruguay",
-  showMenu = true,
-  children,
-}: AppShellProps) {
+export function AppShell({ showMenu = true, children }: AppShellProps) {
   return (
     <div className={styles.shell}>
       <header className={styles.header}>
@@ -27,7 +22,6 @@ export function AppShell({
             <Link to="/" className={styles.logoBox} aria-label="Inicio">
               <span className={styles.logoText}>Ministerio de Salud Pública</span>
             </Link>
-            <span className={styles.headerTitle}>{title}</span>
           </div>
           {showMenu ? <HeaderMenu /> : null}
         </div>
@@ -80,6 +74,8 @@ function HeaderMenu() {
   async function handleLogout() {
     try {
       await logout();
+      // El formulario en curso queda en la pestaña: no debe heredarlo quien entre después.
+      clearReportDraftStorage();
       navigate("/", { replace: true });
     } catch (error) {
       console.error("No se pudo cerrar la sesión", error);
@@ -88,8 +84,9 @@ function HeaderMenu() {
     }
   }
 
-  const healthProSubtype = user?.roles.find((entry) => entry.role === Role.ProfesionalSalud)
-    ?.healthProfessionSubtype;
+  const roleLabels = visibleRoles(user?.roles.map((entry) => entry.role) ?? []).map(
+    (role) => ROLE_LABELS[role],
+  );
 
   return (
     <div className={styles.menuArea} ref={containerRef}>
@@ -98,9 +95,20 @@ function HeaderMenu() {
         className={styles.menuBtn}
         aria-label="Menú"
         aria-expanded={open}
+        aria-haspopup="menu"
         onClick={() => setOpen((previous) => !previous)}
       >
-        Menú
+        <svg
+          className={styles.menuIcon}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          aria-hidden="true"
+        >
+          <path d="M4 7h16M4 12h16M4 17h16" />
+        </svg>
       </button>
 
       {open ? (
@@ -108,15 +116,9 @@ function HeaderMenu() {
           {user ? (
             <div className={styles.menuUser}>
               <p className={styles.menuUserName}>{user.displayName}</p>
-              <p className={styles.menuUserRoles}>
-                {user.roles
-                  .map((entry) =>
-                    entry.role === Role.ProfesionalSalud && entry.healthProfessionSubtype
-                      ? `${ROLE_LABELS[entry.role]} (${HEALTH_PROFESSION_SUBTYPE_LABELS[entry.healthProfessionSubtype]})`
-                      : ROLE_LABELS[entry.role],
-                  )
-                  .join(" · ")}
-              </p>
+              {roleLabels.length > 0 ? (
+                <p className={styles.menuUserRoles}>{roleLabels.join(" · ")}</p>
+              ) : null}
             </div>
           ) : (
             <div className={styles.menuUser}>
@@ -130,11 +132,6 @@ function HeaderMenu() {
           <Link className={styles.menuItem} role="menuitem" to="/">
             Inicio
           </Link>
-          {session.authenticated ? (
-            <Link className={styles.menuItem} role="menuitem" to="/inicio">
-              Mi inicio
-            </Link>
-          ) : null}
           <Link className={styles.menuItem} role="menuitem" to="/reporte?nuevo=1">
             Nuevo reporte
           </Link>
@@ -152,9 +149,6 @@ function HeaderMenu() {
               </Link>
             </>
           ) : null}
-          <Link className={styles.menuItem} role="menuitem" to="/consentimiento">
-            Consentimiento informado
-          </Link>
 
           {session.authenticated ? (
             <button
@@ -174,12 +168,6 @@ function HeaderMenu() {
               Iniciar sesión con GUB UY
             </Link>
           )}
-
-          {healthProSubtype ? (
-            <p className={styles.menuFootnote}>
-              Rol verificado: {HEALTH_PROFESSION_SUBTYPE_LABELS[healthProSubtype]}
-            </p>
-          ) : null}
         </div>
       ) : null}
     </div>

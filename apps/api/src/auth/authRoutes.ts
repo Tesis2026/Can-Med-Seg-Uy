@@ -4,7 +4,6 @@ import {
   anonymousSession,
   sessionSchema,
   type Session,
-  type SessionUser,
 } from "@canmedseg/shared";
 import type { FastifyPluginAsync, FastifyRequest } from "fastify";
 import { z } from "zod";
@@ -53,10 +52,6 @@ function toSession(auth: AuthContext): Session {
     roles: auth.roles,
     permissions: auth.permissions,
   });
-}
-
-function needsConsent(user: SessionUser): boolean {
-  return !user.consentAcceptedAt || user.consentVersion !== CONSENT_VERSION;
 }
 
 function clientContext(request: FastifyRequest) {
@@ -123,12 +118,8 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
         }),
       );
 
-      // Primer login sin consentimiento → la web abre el pop-up de la Ley 18.331.
-      const destination = needsConsent(user)
-        ? webUrl("/inicio", { consentimiento: "requerido", ...(loginState.returnTo ? { returnTo: loginState.returnTo } : {}) })
-        : webUrl(loginState.returnTo ?? "/inicio");
-
-      return reply.redirect(destination, 302);
+      // El consentimiento se pide al iniciar un reporte, no al ingresar.
+      return reply.redirect(webUrl(loginState.returnTo ?? "/"), 302);
     } catch (error) {
       if (error instanceof DisabledUserError) {
         request.log.warn({ userId: error.userId }, "Login de una cuenta deshabilitada");

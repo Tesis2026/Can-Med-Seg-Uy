@@ -51,14 +51,6 @@
   line-height: 1.2;
 }
 
-.headerTitle {
-  font-size: 16px;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .menuArea {
   position: relative;
   display: flex;
@@ -123,16 +115,25 @@
 }
 
 .menuBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: transparent;
   border: none;
+  border-radius: 4px;
   color: var(--color-primary-contrast);
-  font-size: 13px;
   cursor: pointer;
-  padding: 4px 0;
+  padding: 6px;
 }
 
 .menuBtn:hover {
-  text-decoration: underline;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.menuIcon {
+  width: 24px;
+  height: 24px;
+  display: block;
 }
 
 .main {
@@ -172,10 +173,6 @@
 
   .logoText {
     font-size: 11px;
-  }
-
-  .headerTitle {
-    font-size: 14px;
   }
 
   .main {

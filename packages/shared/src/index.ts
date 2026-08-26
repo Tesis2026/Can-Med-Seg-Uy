@@ -15,6 +15,7 @@ export {
   ROLE_LABELS,
   ASSIGNABLE_ROLES,
   isAssignableRole,
+  visibleRoles,
   type Role as RoleValue,
   type AssignableRole,
 } from "./enums/role";
@@ -69,6 +70,7 @@ export {
   reportHistoryItemSchema,
   reportHistoryListSchema,
   notifierStatsSchema,
+  reviewSummarySchema,
   submittedReportStatusSchema,
   createdReportSchema,
   reportDetailSchema,
@@ -92,6 +94,7 @@ export {
   type ReportDraftDetail,
   type ReportHistoryItem,
   type NotifierStats,
+  type ReviewSummary,
   type CreatedReport,
   type ReportDetail,
   type SeriousnessCriterion,

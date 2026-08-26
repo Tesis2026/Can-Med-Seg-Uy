@@ -1,4 +1,4 @@
-import { ROLE_LABELS, HEALTH_PROFESSION_SUBTYPE_LABELS } from "@canmedseg/shared";
+import { ROLE_LABELS, visibleRoles } from "@canmedseg/shared";
 import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 
@@ -64,14 +64,8 @@ function escapeHtml(value: string): string {
 }
 
 function roleChips(account: MockAccount): string {
-  return account.roles
-    .map((entry) => {
-      const label = ROLE_LABELS[entry.role];
-      const subtype = entry.healthProfessionSubtype
-        ? ` · ${HEALTH_PROFESSION_SUBTYPE_LABELS[entry.healthProfessionSubtype]}`
-        : "";
-      return `<span class="chip">${escapeHtml(label + subtype)}</span>`;
-    })
+  return visibleRoles(account.roles.map((entry) => entry.role))
+    .map((role) => `<span class="chip">${escapeHtml(ROLE_LABELS[role])}</span>`)
     .join("");
 }
 
