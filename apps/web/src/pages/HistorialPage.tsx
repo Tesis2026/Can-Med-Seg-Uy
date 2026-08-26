@@ -9,6 +9,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 
 import { useSession } from "../features/auth/SessionContext";
+import { formatReportDateTime } from "../features/reporte/ReportDetailView";
 import { listOwnReports } from "../features/reporte/reportApi";
 
 import styles from "./MisReportes.module.css";
@@ -20,17 +21,6 @@ const STATUS_CLASS: Record<SubmittedReportStatus, string> = {
   [ReportStatus.EnviadoMsp]: styles.statusEnviadoMsp,
   [ReportStatus.Rechazado]: styles.statusRechazado,
 };
-
-export function formatDateTime(value: string): string {
-  return new Date(value).toLocaleString("es-UY", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-}
 
 function reportTitle(report: Pick<ReportHistoryItem, "patientInitials" | "patientNationalId">) {
   const parts = [report.patientInitials, report.patientNationalId].filter(
@@ -155,7 +145,7 @@ export function HistorialPage() {
                 ) : null}
               </div>
               <div className={styles.colDate}>
-                <span className={styles.date}>{formatDateTime(report.submittedAt)}</span>
+                <span className={styles.date}>{formatReportDateTime(report.submittedAt)}</span>
               </div>
               <div className={styles.colStatus}>
                 <span className={`${styles.status} ${STATUS_CLASS[report.status]}`}>

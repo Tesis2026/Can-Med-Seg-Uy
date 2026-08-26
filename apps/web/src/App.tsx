@@ -10,6 +10,8 @@ import { LandingPage } from "./pages/LandingPage";
 import { LoginPage } from "./pages/LoginPage";
 import { ReporteExitoPage } from "./pages/ReporteExitoPage";
 import { ReporteWizardPage } from "./pages/ReporteWizardPage";
+import { RevisionDetallePage } from "./pages/RevisionDetallePage";
+import { RevisionPage } from "./pages/RevisionPage";
 
 /**
  * La raíz es la landing institucional para quien no inició sesión y la home
@@ -40,6 +42,9 @@ export function App() {
         <Route path="formularios-en-progreso" element={<FormulariosEnProgresoPage />} />
         <Route path="historial" element={<HistorialPage />} />
         <Route path="historial/:id" element={<DetalleReportePage />} />
+        {/* RF-5: bandeja y detalle de revisión (investigador / MSP). */}
+        <Route path="revision" element={<RevisionPage />} />
+        <Route path="revision/:id" element={<RevisionDetallePage />} />
       </Route>
       {/* La home personal se mudó a la raíz; el retorno del login sigue funcionando. */}
       <Route path="inicio" element={<Navigate to="/" replace />} />
