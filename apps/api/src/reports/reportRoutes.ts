@@ -1,7 +1,11 @@
 import {
   Permission,
+  classifiedReportSchema,
+  classifyReportInputSchema,
   hasPermission,
   reportDetailSchema,
+  reviewCorrectionInputSchema,
+  reviewReportDetailSchema,
   saveReportDraftInputSchema,
   submitReportRequestSchema,
 } from "@canmedseg/shared";
@@ -11,6 +15,7 @@ import { z } from "zod";
 import { CaptchaError, consumeVerificationToken } from "../captcha/captchaRepository";
 import { pool } from "../database/pool";
 import { requirePermission } from "../auth/guards";
+import { notifyInvestigatorsNewReportStub } from "../notifications/investigatorNotify";
 import {
   DraftNotFoundError,
   createDraft,
@@ -24,6 +29,15 @@ import {
   listOwnReports,
   updateDraft,
 } from "./reportRepository";
+import {
+  ReportNotReviewableError,
+  ReportReviewNotFoundError,
+  applyReviewCorrections,
+  classifyReport,
+  getReviewReport,
+  listMspPending,
+  listReviewQueue,
+} from "./reviewRepository";
 
 const reportParamsSchema = z.object({ id: z.string().uuid() });
 
@@ -77,6 +91,7 @@ export const reportRoutes: FastifyPluginAsync = async (app) => {
         user?.id ?? null,
         user ? (draftId ?? null) : null,
       );
+      notifyInvestigatorsNewReportStub(request.log, report, created.id);
       return reply.code(201).send(created);
     } catch (error) {
       if (error instanceof DraftNotFoundError) {
@@ -166,6 +181,69 @@ export const reportRoutes: FastifyPluginAsync = async (app) => {
     "/reports/review-summary",
     { preHandler: requirePermission(Permission.ReportReview) },
     async (_request, reply) => reply.send(await getReviewSummary(pool)),
+  );
+
+  /* ---------------------------------------------------------------- *
+   * Revisión del investigador (RF-5).
+   * ---------------------------------------------------------------- */
+
+  app.get(
+    "/reports/review-queue",
+    { preHandler: requirePermission(Permission.ReportReview) },
+    async (_request, reply) => reply.send(await listReviewQueue(pool)),
+  );
+
+  app.get(
+    "/reports/msp-pending",
+    { preHandler: requirePermission(Permission.ReportReview) },
+    async (_request, reply) => reply.send(await listMspPending(pool)),
+  );
+
+  app.get(
+    "/reports/review/:id",
+    { preHandler: requirePermission(Permission.ReportReview) },
+    async (request, reply) => {
+      const { id } = reportParamsSchema.parse(request.params);
+      const detail = await getReviewReport(pool, id);
+      if (!detail) return reply.code(404).send({ message: "Reporte no encontrado o ya revisado." });
+      return reply.send(reviewReportDetailSchema.parse(detail));
+    },
+  );
+
+  app.patch(
+    "/reports/review/:id",
+    { preHandler: requirePermission(Permission.ReportReview) },
+    async (request, reply) => {
+      const { id } = reportParamsSchema.parse(request.params);
+      const input = reviewCorrectionInputSchema.parse(request.body ?? {});
+      try {
+        const detail = await applyReviewCorrections(pool, id, sessionUserId(request), input);
+        return reply.send(reviewReportDetailSchema.parse(detail));
+      } catch (error) {
+        if (error instanceof ReportReviewNotFoundError || error instanceof ReportNotReviewableError) {
+          return reply.code(404).send({ message: error.message });
+        }
+        throw error;
+      }
+    },
+  );
+
+  app.post(
+    "/reports/review/:id/classify",
+    { preHandler: requirePermission(Permission.ReportReview) },
+    async (request, reply) => {
+      const { id } = reportParamsSchema.parse(request.params);
+      const input = classifyReportInputSchema.parse(request.body ?? {});
+      try {
+        const result = await classifyReport(pool, id, sessionUserId(request), input);
+        return reply.send(classifiedReportSchema.parse(result));
+      } catch (error) {
+        if (error instanceof ReportReviewNotFoundError || error instanceof ReportNotReviewableError) {
+          return reply.code(409).send({ message: error.message, reason: "no_revisable" });
+        }
+        throw error;
+      }
+    },
   );
 
   /** Detalle de un reporte enviado: su notificador o un revisor (RNF-1.2). */

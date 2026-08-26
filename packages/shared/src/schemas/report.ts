@@ -444,6 +444,77 @@ export const reviewSummarySchema = z.object({
 
 export type ReviewSummary = z.infer<typeof reviewSummarySchema>;
 
+/* ------------------------------------------------------------------ *
+ * Revisión del investigador (RF-5).
+ * ------------------------------------------------------------------ */
+
+/** Decisión de clasificación al validar un reporte en `en_revision`. */
+export const reportClassificationDecisionSchema = z.enum([
+  "aprobado_local",
+  "enviar_msp",
+  "rechazado",
+]);
+
+export type ReportClassificationDecision = z.infer<typeof reportClassificationDecisionSchema>;
+
+/** Correcciones limitadas antes o durante la clasificación (plan-arquitectura.md). */
+export const reviewCorrectionInputSchema = z.object({
+  causality: causalitySchema.optional(),
+  severityGrade: severityGradeSchema.optional(),
+  reviewNotes: z.string().max(500).optional(),
+});
+
+export type ReviewCorrectionInput = z.infer<typeof reviewCorrectionInputSchema>;
+
+/** Clasificar un reporte: relación causal obligatoria (RF-5 / notas cliente). */
+export const classifyReportInputSchema = reviewCorrectionInputSchema.extend({
+  decision: reportClassificationDecisionSchema,
+  causality: causalitySchema,
+});
+
+export type ClassifyReportInput = z.infer<typeof classifyReportInputSchema>;
+
+/** Fila de la bandeja «Reportes en revisión» (RF-5.2). */
+export const reviewQueueItemSchema = z.object({
+  id: z.string().uuid(),
+  submittedAt: z.string().datetime(),
+  patientInitials: z.string(),
+  patientNationalId: z.string(),
+  adverseEventDescription: z.string(),
+  /** Algún evento del módulo repetible marcó gravedad. */
+  hasSeriousEvent: z.boolean(),
+});
+
+export type ReviewQueueItem = z.infer<typeof reviewQueueItemSchema>;
+
+export const reviewQueueListSchema = z.array(reviewQueueItemSchema);
+
+/** Reporte pendiente de reintento de envío al MSP (RF-5.7 — vista parcial). */
+export const mspPendingItemSchema = reviewQueueItemSchema.extend({
+  outboxAttempts: z.number().int().nonnegative(),
+  lastError: z.string().nullable(),
+});
+
+export type MspPendingItem = z.infer<typeof mspPendingItemSchema>;
+
+export const mspPendingListSchema = z.array(mspPendingItemSchema);
+
+/** Detalle ampliado para la pantalla de investigación. */
+export const reviewReportDetailSchema = reportDetailSchema.extend({
+  reviewedAt: z.string().datetime().nullable(),
+  reviewNotes: z.string().nullable(),
+});
+
+export type ReviewReportDetail = z.infer<typeof reviewReportDetailSchema>;
+
+export const classifiedReportSchema = z.object({
+  id: z.string().uuid(),
+  status: submittedReportStatusSchema,
+  reviewedAt: z.string().datetime(),
+});
+
+export type ClassifiedReport = z.infer<typeof classifiedReportSchema>;
+
 export function createEmptyReportDraft(): AdverseEventReportDraft {
   return adverseEventReportDraftSchema.parse({});
 }

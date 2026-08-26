@@ -1,13 +1,18 @@
 import {
+  classifiedReportSchema,
   createdReportSchema,
+  mspPendingListSchema,
   notifierStatsSchema,
   reportDetailSchema,
   reportDraftDetailSchema,
   reportDraftSummaryListSchema,
   reportDraftSummarySchema,
   reportHistoryListSchema,
+  reviewQueueListSchema,
+  reviewReportDetailSchema,
   reviewSummarySchema,
   type AdverseEventReportDraft,
+  type ClassifyReportInput,
   type CreatedReport,
   type NotifierStats,
   type ReviewSummary,
@@ -15,6 +20,10 @@ import {
   type ReportDraftDetail,
   type ReportDraftSummary,
   type ReportHistoryItem,
+  type ReviewCorrectionInput,
+  type ReviewQueueItem,
+  type MspPendingItem,
+  type ReviewReportDetail,
 } from "@canmedseg/shared";
 import { apiFetch } from "../../lib/api";
 
@@ -126,6 +135,53 @@ export async function fetchReviewSummary(): Promise<ReviewSummary> {
   return reviewSummarySchema.parse(
     await apiFetch("/api/reports/review-summary", {
       fallbackMessage: "No se pudo cargar el resumen de revisión.",
+    }),
+  );
+}
+
+export async function listReviewQueue(): Promise<ReviewQueueItem[]> {
+  return reviewQueueListSchema.parse(
+    await apiFetch("/api/reports/review-queue", {
+      fallbackMessage: "No se pudo cargar la bandeja de revisión.",
+    }),
+  );
+}
+
+export async function listMspPending(): Promise<MspPendingItem[]> {
+  return mspPendingListSchema.parse(
+    await apiFetch("/api/reports/msp-pending", {
+      fallbackMessage: "No se pudo cargar la cola de envíos al MSP.",
+    }),
+  );
+}
+
+export async function fetchReviewReport(id: string): Promise<ReviewReportDetail> {
+  return reviewReportDetailSchema.parse(
+    await apiFetch(`/api/reports/review/${id}`, {
+      fallbackMessage: "No se pudo abrir el reporte para revisión.",
+    }),
+  );
+}
+
+export async function saveReviewCorrections(
+  id: string,
+  input: ReviewCorrectionInput,
+): Promise<ReviewReportDetail> {
+  return reviewReportDetailSchema.parse(
+    await apiFetch(`/api/reports/review/${id}`, {
+      method: "PATCH",
+      body: input,
+      fallbackMessage: "No se pudieron guardar las correcciones.",
+    }),
+  );
+}
+
+export async function classifyReport(id: string, input: ClassifyReportInput) {
+  return classifiedReportSchema.parse(
+    await apiFetch(`/api/reports/review/${id}/classify`, {
+      method: "POST",
+      body: input,
+      fallbackMessage: "No se pudo clasificar el reporte.",
     }),
   );
 }

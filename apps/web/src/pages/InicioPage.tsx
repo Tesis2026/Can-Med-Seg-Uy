@@ -82,6 +82,14 @@ export function InicioPage() {
             description="Consultar reportes enviados anteriormente."
           />
         ) : null}
+        {hasPermission(permissions, Permission.ReportReview) ? (
+          <ActionCard
+            to="/revision"
+            icon={<IconRevision />}
+            title="Bandeja de revisión"
+            description="Validar reportes enviados y clasificarlos."
+          />
+        ) : null}
       </div>
     </div>
   );
@@ -229,6 +237,15 @@ function IconHistorial() {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1M3.5 4.5V9H8" />
       <path d="M12 7.5V12l3 2" />
+    </svg>
+  );
+}
+
+function IconRevision() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M9 11l3 3L22 4" />
+      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
     </svg>
   );
 }
