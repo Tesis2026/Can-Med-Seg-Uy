@@ -84,6 +84,7 @@ export {
   createdReportSchema,
   reportDetailSchema,
   seriousnessCriterionSchema,
+  MAX_COMPOSITION_ML,
   severityGradeSchema,
   causalitySchema,
   createEmptyReportDraft,

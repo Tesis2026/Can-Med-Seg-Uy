@@ -1,4 +1,4 @@
-import type { AdverseEventReportDraft } from "@canmedseg/shared";
+import { MAX_COMPOSITION_ML, type AdverseEventReportDraft } from "@canmedseg/shared";
 
 import { dateValidationError, parseToDate } from "./FormFields";
 import {
@@ -207,16 +207,18 @@ export function validateStep(
         ["otherPercent", "Otro"],
       ] as const) {
         const v = m[key];
-        if (
+        const fueraDeRango =
           v !== undefined &&
           (!Number.isFinite(v) ||
             v < 0 ||
-            (m.compositionUnit === "percent" && v > 100))
-        ) {
+            (m.compositionUnit === "percent"
+              ? v > 100
+              : v > MAX_COMPOSITION_ML));
+        if (fueraDeRango) {
           errors[`medicines.${i}.${key}`] =
             m.compositionUnit === "percent"
-              ? `${label}: porcentaje inválido`
-              : `${label}: volumen inválido`;
+              ? `${label}: ingrese un porcentaje entre 0 y 100`
+              : `${label}: ingrese un volumen entre 0 y ${MAX_COMPOSITION_ML} ml`;
         }
       }
 
