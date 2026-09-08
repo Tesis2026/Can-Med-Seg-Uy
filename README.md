@@ -96,3 +96,30 @@ reportes enviados** con su estado.
 Los borradores caducan por inactividad según `DRAFT_RETENTION_DAYS` (90 días por
 defecto). Un visitante no tiene borradores ni historial: si cierra la pestaña sin
 enviar, el formulario se descarta.
+
+## Dashboard, exportaciones y reportes periódicos
+
+Disponible para los roles **Investigador** y **MSP**.
+
+- **Dashboard analítico** (`/dashboard`): los once gráficos del MVP sobre los
+  reportes ya validados (`aprobado_local` y `enviado_msp`). Los filtros de la
+  parte superior recalculan todos los gráficos, la tabla y la exportación, y
+  quedan en la URL, así que una vista filtrada se puede compartir. Cada gráfico
+  alterna entre la vista visual y la tabla de datos.
+- **Exportaciones** (`/exportaciones`): descarga en XLSX o CSV de lo mismo que se
+  está viendo. La cédula se reemplaza por un identificador estable por persona y
+  el archivo no incluye nombre, apellido, correo ni teléfono. El XLSX trae una
+  portada con los filtros y una hoja por módulo: reportes, eventos adversos,
+  medicamentos y concomitantes. Cada descarga queda registrada en `export_logs`.
+- **Reportes periódicos** (`/reportes-periodicos`): cada investigador elige la
+  frecuencia (mensual, trimestral o semestral) y qué gráficos recibe. Sin
+  configurar nada se envían todos.
+
+El seudónimo se deriva de `PSEUDONYM_SECRET`: **cambiar esa variable rompe la
+correspondencia** con los archivos ya exportados.
+
+El planificador de envíos corre dentro de la API cada
+`PERIODIC_REPORTS_INTERVAL_MINUTES`. Hoy deja el reporte armado en el log del
+servidor; el envío por correo se conecta en Semana 8, en
+`apps/api/src/periodic/periodicScheduler.ts`. El registro de envíos y el control
+de duplicados por período ya funcionan.
