@@ -127,3 +127,14 @@ export {
   type CaptchaAnswerInput,
   type CaptchaVerification,
 } from "./schemas/captcha";
+
+export {
+  UyDepartment,
+  UY_DEPARTMENTS,
+  UY_DEPARTMENT_LABELS,
+  UyRegion,
+  UY_REGIONS,
+  UY_REGION_LABELS,
+  regionOfDepartment,
+  isUyDepartment,
+} from "./enums/uy-department";

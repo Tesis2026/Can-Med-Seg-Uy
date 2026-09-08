@@ -1,4 +1,9 @@
-import type { AdverseEventReportDraft, Patient } from "@canmedseg/shared";
+import {
+  UY_DEPARTMENTS,
+  UY_DEPARTMENT_LABELS,
+  type AdverseEventReportDraft,
+  type Patient,
+} from "@canmedseg/shared";
 
 import {
   DateTriple,
@@ -188,6 +193,31 @@ export function StepPaciente({ draft, errors, onChange }: StepPacienteProps) {
           ))}
         </SelectInput>
       </Field>
+
+      {/* Alimenta la distribución por región del dashboard (RF-7.2). */}
+      {(p.countryOfEventStart || "Uruguay") === "Uruguay" ? (
+        <Field label="Departamento" htmlFor="f-departamento" error={errors.department}>
+          <SelectInput
+            id="f-departamento"
+            value={p.department ?? ""}
+            hasError={Boolean(errors.department)}
+            placeholder="Seleccionar departamento"
+            onChange={(e) =>
+              patch({
+                department: e.target.value
+                  ? (e.target.value as Patient["department"])
+                  : undefined,
+              })
+            }
+          >
+            {UY_DEPARTMENTS.map((department) => (
+              <option key={department} value={department}>
+                {UY_DEPARTMENT_LABELS[department]}
+              </option>
+            ))}
+          </SelectInput>
+        </Field>
+      ) : null}
     </>
   );
 }
