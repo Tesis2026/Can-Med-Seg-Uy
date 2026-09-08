@@ -1,4 +1,4 @@
-import { ROLE_LABELS, visibleRoles } from "@canmedseg/shared";
+import { Permission, ROLE_LABELS, hasPermission, visibleRoles } from "@canmedseg/shared";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 
@@ -135,6 +135,19 @@ function HeaderMenu() {
           <Link className={styles.menuItem} role="menuitem" to="/reporte?nuevo=1">
             Nuevo reporte
           </Link>
+          {hasPermission(session.permissions, Permission.DashboardRead) ? (
+            <>
+              <Link className={styles.menuItem} role="menuitem" to="/dashboard">
+                Dashboard analítico
+              </Link>
+              <Link className={styles.menuItem} role="menuitem" to="/exportaciones">
+                Exportaciones
+              </Link>
+              <Link className={styles.menuItem} role="menuitem" to="/reportes-periodicos">
+                Reportes periódicos
+              </Link>
+            </>
+          ) : null}
           {session.authenticated ? (
             <>
               <Link

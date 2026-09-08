@@ -2,7 +2,9 @@ import { Route, Routes, Navigate } from "react-router-dom";
 
 import { useSession } from "./features/auth/SessionContext";
 import { AppShell } from "./layouts/AppShell";
+import { DashboardPage } from "./pages/DashboardPage";
 import { DetalleReportePage } from "./pages/DetalleReportePage";
+import { ExportacionesPage } from "./pages/ExportacionesPage";
 import { FormulariosEnProgresoPage } from "./pages/FormulariosEnProgresoPage";
 import { HistorialPage } from "./pages/HistorialPage";
 import { InicioPage } from "./pages/InicioPage";
@@ -10,6 +12,7 @@ import { LandingPage } from "./pages/LandingPage";
 import { LoginPage } from "./pages/LoginPage";
 import { ReporteExitoPage } from "./pages/ReporteExitoPage";
 import { ReporteWizardPage } from "./pages/ReporteWizardPage";
+import { ReportesPeriodicosPage } from "./pages/ReportesPeriodicosPage";
 import { RevisionDetallePage } from "./pages/RevisionDetallePage";
 import { RevisionPage } from "./pages/RevisionPage";
 
@@ -45,6 +48,10 @@ export function App() {
         {/* RF-5: bandeja y detalle de revisión (investigador / MSP). */}
         <Route path="revision" element={<RevisionPage />} />
         <Route path="revision/:id" element={<RevisionDetallePage />} />
+        {/* RF-7 y RF-8: dashboard, exportación y reportes periódicos. */}
+        <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="exportaciones" element={<ExportacionesPage />} />
+        <Route path="reportes-periodicos" element={<ReportesPeriodicosPage />} />
       </Route>
       {/* La home personal se mudó a la raíz; el retorno del login sigue funcionando. */}
       <Route path="inicio" element={<Navigate to="/" replace />} />
