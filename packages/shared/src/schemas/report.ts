@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { UY_DEPARTMENTS } from "../enums/uy-department";
+import type { UyDepartment as UyDepartmentType } from "../enums/uy-department";
 import {
   REPORT_STATUSES,
   ReportStatus,
@@ -48,6 +50,10 @@ export const patientSchema = z.object({
   ageAtEventStart: z.number().int().nonnegative().optional(),
   /** 9.0 País en donde comenzó el evento adverso(*). */
   countryOfEventStart: z.string().default("Uruguay"),
+  /** 9.1 Departamento de residencia; alimenta el gráfico por región (RF-7.10). */
+  department: z
+    .enum(UY_DEPARTMENTS as unknown as [UyDepartmentType, ...UyDepartmentType[]])
+    .optional(),
 });
 
 export type Patient = z.infer<typeof patientSchema>;
