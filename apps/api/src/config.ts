@@ -58,6 +58,12 @@ const environmentSchema = z.object({
 
   /** Caducidad de los borradores por inactividad (RF-4 / plan-arquitectura.md). */
   DRAFT_RETENTION_DAYS: z.coerce.number().int().positive().default(90),
+
+  /**
+   * Clave del seudónimo de exportaciones (RF-8.2). Debe ser estable: cambiarla
+   * rompe la correspondencia entre los archivos ya exportados y los nuevos.
+   */
+  PSEUDONYM_SECRET: z.string().min(16).default("canmedseg-pseudonimo-local-dev"),
 });
 
 export const config = environmentSchema.parse(process.env);
