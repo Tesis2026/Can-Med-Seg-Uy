@@ -52,6 +52,13 @@ export const patientSchema = z.object({
 
 export type Patient = z.infer<typeof patientSchema>;
 
+/**
+ * Tope de la composición declarada cargada en mililitros. Existe para que un
+ * valor fuera de rango se rechace con un mensaje del formulario en vez de
+ * hacer fallar la escritura en la base.
+ */
+export const MAX_COMPOSITION_ML = 100000;
+
 /** 17.0 Indicador de gravedad (criterio único). */
 export const seriousnessCriterionSchema = z.enum([
   "muerte",
@@ -317,11 +324,19 @@ export const submitAdverseEventReportSchema = adverseEventReportDraftSchema.supe
       }
       for (const field of ["thcPercent", "cbdPercent", "otherPercent"] as const) {
         const value = medicine[field];
-        if (medicine.compositionUnit === "percent" && value !== undefined && value > 100) {
+        if (value === undefined) continue;
+        if (medicine.compositionUnit === "percent" && value > 100) {
           context.addIssue({
             code: z.ZodIssueCode.custom,
             path: ["medicines", index, field],
             message: "Porcentaje inválido",
+          });
+        }
+        if (medicine.compositionUnit === "ml" && value > MAX_COMPOSITION_ML) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["medicines", index, field],
+            message: `El volumen no puede superar ${MAX_COMPOSITION_ML} ml`,
           });
         }
       }
