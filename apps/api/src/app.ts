@@ -5,6 +5,7 @@ import Fastify from "fastify";
 import { registerAuthContext } from "./auth/authContext";
 import { authRoutes } from "./auth/authRoutes";
 import { mockIdpRoutes } from "./auth/mockIdpRoutes";
+import { analyticsRoutes } from "./analytics/analyticsRoutes";
 import { captchaRoutes } from "./captcha/captchaRoutes";
 import { config, isMockIdentityProvider } from "./config";
 import { pool } from "./database/pool";
@@ -49,6 +50,7 @@ export async function buildApp() {
   await app.register(authRoutes, { prefix: "/api" });
   await app.register(captchaRoutes, { prefix: "/api" });
   await app.register(reportRoutes, { prefix: "/api" });
+  await app.register(analyticsRoutes, { prefix: "/api" });
 
   if (isMockIdentityProvider) {
     await app.register(mockIdpRoutes, { prefix: "/mock-idp" });
