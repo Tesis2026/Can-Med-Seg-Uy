@@ -162,9 +162,20 @@ export function useReportDraft({
   const [resuming, setResuming] = useState(Boolean(resumeId));
   const [resumeError, setResumeError] = useState<string | null>(null);
   const savingRef = useRef(false);
+  /** El formulario tiene cambios sin guardar en el servidor. */
+  const dirtyRef = useRef(false);
+  /**
+   * El asistente sigue montado. Se reafirma en cada montaje: en desarrollo React
+   * monta, desmonta y vuelve a montar, y si solo se marcara el desmontaje la
+   * referencia quedaría en falso para siempre, impidiendo registrar el id del
+   * borrador y creando uno nuevo en cada guardado.
+   */
   const aliveRef = useRef(true);
-  useEffect(() => () => {
-    aliveRef.current = false;
+  useEffect(() => {
+    aliveRef.current = true;
+    return () => {
+      aliveRef.current = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -194,6 +205,7 @@ export function useReportDraft({
     (updater: (prev: AdverseEventReportDraft) => AdverseEventReportDraft) => {
       const next = updater(draftRef.current);
       draftRef.current = next;
+      dirtyRef.current = true;
       persistLocally(next);
       setDraft(next);
     },
@@ -259,10 +271,13 @@ export function useReportDraft({
       setSaveError(null);
       try {
         const summary = await saveOrRecreate(draftIdRef.current, current, options);
-        if (!aliveRef.current) return;
         draftIdRef.current = summary.id;
-        setDraftId(summary.id);
         writeStoredDraftId(summary.id);
+        dirtyRef.current = false;
+        // Un guardado que termina después de cerrar el asistente persiste el
+        // reporte, pero ya no toca el estado de la pantalla.
+        if (!aliveRef.current) return;
+        setDraftId(summary.id);
         setSavedAt(new Date(summary.updatedAt));
         setSaveState("saved");
       } catch (error) {
@@ -278,6 +293,15 @@ export function useReportDraft({
     [persist],
   );
 
+  /** Guarda al abandonar el asistente, solo si quedó algo sin guardar. */
+  const saveIfDirty = useCallback(
+    async (options: { keepalive?: boolean } = {}) => {
+      if (!dirtyRef.current) return;
+      await saveDraft(options);
+    },
+    [saveDraft],
+  );
+
   const clearDraft = useCallback(() => {
     try {
       sessionStorage.removeItem(DRAFT_STORAGE_KEY);
@@ -288,6 +312,7 @@ export function useReportDraft({
     const empty = createEmptyReportDraft();
     draftRef.current = empty;
     draftIdRef.current = null;
+    dirtyRef.current = false;
     setDraftId(null);
     setDraft(empty);
     setSaveState("idle");
@@ -301,6 +326,7 @@ export function useReportDraft({
     updateDraft: updateDraftState,
     clearDraft,
     saveDraft,
+    saveIfDirty,
     saveState,
     savedAt,
     saveError,

@@ -61,6 +61,7 @@ function ReporteWizard({ ownerId }: { ownerId: string | null }) {
     updateDraft,
     clearDraft,
     saveDraft,
+    saveIfDirty,
     saveState,
     savedAt,
     saveError,
@@ -85,8 +86,8 @@ function ReporteWizard({ ownerId }: { ownerId: string | null }) {
   }, [searchParams, setSearchParams]);
 
   /** Autoguardado también al abandonar el asistente sin cambiar de sección. */
-  const saveDraftRef = useRef(saveDraft);
-  saveDraftRef.current = saveDraft;
+  const saveDraftRef = useRef(saveIfDirty);
+  saveDraftRef.current = saveIfDirty;
   useEffect(
     () => () => {
       void saveDraftRef.current({ keepalive: true });
