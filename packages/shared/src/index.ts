@@ -138,3 +138,19 @@ export {
   regionOfDepartment,
   isUyDepartment,
 } from "./enums/uy-department";
+
+export {
+  SEX_LABELS,
+  EVENT_OUTCOME_LABELS,
+  SERIOUSNESS_LABELS,
+  SEVERITY_GRADE_LABELS,
+  CAUSALITY_LABELS,
+  ACCESS_FORM_LABELS,
+  PRESENTATION_LABELS,
+  ADMINISTRATION_ROUTE_LABELS,
+  INDICATION_LABELS,
+  ACTION_TAKEN_LABELS,
+  PROFESSION_LABELS,
+  REPORTING_AREA_LABELS,
+  labelFor,
+} from "./enums/report-labels";
