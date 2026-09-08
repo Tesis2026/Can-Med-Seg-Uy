@@ -16,6 +16,7 @@ export async function requestChallenge(): Promise<CaptchaChallenge> {
   );
 }
 
+// POST /api/captcha/verify
 export async function solveChallenge(
   challengeId: string,
   answer: string,
