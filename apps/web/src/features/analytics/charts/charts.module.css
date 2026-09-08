@@ -1,0 +1,246 @@
+/* Tarjetas de gráfico del dashboard analítico (RF-7.2). */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.cardTitle {
+  color: var(--color-text);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.tabs {
+  display: flex;
+  gap: 20px;
+  border-bottom: 1px solid #eeeeee;
+}
+
+.tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 8px 2px;
+  margin-bottom: -1px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.tab:hover {
+  color: var(--color-primary);
+}
+
+.tabActive {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+.cardMeta {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+
+.panel {
+  min-height: 120px;
+}
+
+.plotWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/*
+ * Barras horizontales. La grilla vertical ocupa la columna de las barras y las
+ * filas se dibujan encima; el ancho de la etiqueta se achica en pantallas
+ * angostas, pero el texto conserva su tamaño.
+ */
+.bars {
+  display: grid;
+  grid-template-columns: minmax(64px, 148px) 1fr auto;
+  align-items: center;
+  column-gap: 10px;
+  row-gap: 6px;
+  position: relative;
+}
+
+.grid {
+  grid-column: 2;
+  grid-row: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.gridLine {
+  width: 1px;
+  background: repeating-linear-gradient(
+    to bottom,
+    #e3e3e0 0,
+    #e3e3e0 3px,
+    transparent 3px,
+    transparent 7px
+  );
+}
+
+.barRow {
+  display: contents;
+}
+
+.barLabel {
+  grid-column: 1;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  line-height: 1.25;
+  text-align: right;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.barTrack {
+  grid-column: 2;
+  position: relative;
+  height: 18px;
+  display: block;
+}
+
+.barFill {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  border-radius: 0 4px 4px 0;
+  display: block;
+  min-width: 2px;
+}
+
+.barValue {
+  grid-column: 3;
+  color: var(--color-text);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  min-width: 2.5em;
+  text-align: right;
+}
+
+.axisRow {
+  grid-column: 2;
+  display: flex;
+  justify-content: space-between;
+  padding-top: 4px;
+}
+
+.axisTick {
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  min-height: 18px;
+}
+
+.hintSwatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* Anillo */
+.donut {
+  width: 100%;
+  max-width: 260px;
+  height: auto;
+  margin: 0 auto;
+}
+
+.donutTotal {
+  fill: var(--color-text);
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.donutUnit {
+  fill: var(--color-text-secondary);
+  font-size: 11px;
+}
+
+.legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.legendSwatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.legendLabel {
+  color: var(--color-text);
+}
+
+.legendValue {
+  color: var(--color-text-secondary);
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Vista de tabla del gráfico */
+.dataTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.dataTable th,
+.dataTable td {
+  padding: 7px 8px;
+  border-bottom: 1px solid #eeeeee;
+  text-align: left;
+}
+
+.dataTable th {
+  color: #333333;
+  font-size: 12px;
+  font-weight: 600;
+  background: #f5f5f5;
+}
+
+.numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.emptyPlot {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  padding: 24px 0;
+}
