@@ -64,6 +64,10 @@ const environmentSchema = z.object({
    * rompe la correspondencia entre los archivos ya exportados y los nuevos.
    */
   PSEUDONYM_SECRET: z.string().min(16).default("canmedseg-pseudonimo-local-dev"),
+
+  /** Corrida del planificador de reportes periódicos (RF-8.3). */
+  PERIODIC_REPORTS_ENABLED: booleanFlag("true"),
+  PERIODIC_REPORTS_INTERVAL_MINUTES: z.coerce.number().int().positive().default(60),
 });
 
 export const config = environmentSchema.parse(process.env);
