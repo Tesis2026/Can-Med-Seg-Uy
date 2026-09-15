@@ -8,11 +8,12 @@ async function start(): Promise<void> {
   if (config.RUN_MIGRATIONS) await runMigrations();
 
   const app = await buildApp();
-  await app.listen({ host: config.HOST, port: config.PORT });
 
-  // Reportes periódicos a investigadores (RF-8.3).
+  // Debe registrarse ANTES de listen(): Fastify no permite addHook con el server ya abierto.
   const stopScheduler = startPeriodicScheduler(pool, app.log);
   app.addHook("onClose", async () => stopScheduler());
+
+  await app.listen({ host: config.HOST, port: config.PORT });
 }
 
 start().catch((error: unknown) => {
