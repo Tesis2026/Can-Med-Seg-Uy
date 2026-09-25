@@ -10,6 +10,7 @@ export function sha256Hex(value: string): string {
   return createHash("sha256").update(value).digest("hex");
 }
 
+// Registro con GUB UY: deprecado momentáneamente.
 export function base64UrlSha256(value: string): string {
   return createHash("sha256").update(value).digest("base64url");
 }
@@ -28,6 +29,8 @@ function base64UrlJson(value: unknown): string {
 }
 
 /**
+ * Registro con GUB UY: deprecado momentáneamente.
+ *
  * Firma HS256 mínima para el `id_token` del IdP mock (evita sumar dependencias).
  * Con GUB UY real el id_token viene firmado RS256 por el proveedor; ver
  * `verifyHs256Jwt` para el alcance de la validación local.
@@ -42,6 +45,8 @@ export function signHs256Jwt(claims: JwtClaims, secret: string): string {
 }
 
 /**
+ * Registro con GUB UY: deprecado momentáneamente.
+ *
  * Verifica un JWT HS256 y devuelve sus claims. Devuelve `null` si el algoritmo no
  * es HS256 (p. ej. RS256 de GUB UY real) o si la firma no coincide: el llamador
  * decide si eso es un error o si sigue con la llamada a userinfo.

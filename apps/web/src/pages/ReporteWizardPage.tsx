@@ -306,7 +306,8 @@ function DraftStatus({ persist, state, savedAt, error }: DraftStatusProps) {
     return (
       <p className={styles.draftNotice}>
         Está reportando sin iniciar sesión: el formulario no se guarda como borrador ni
-        queda en un historial. Inicie sesión con GUB UY si quiere retomarlo más tarde.
+        queda en un historial. Inicie sesión si quiere retomarlo más tarde.
+        {/* Registro con GUB UY: deprecado momentáneamente. Antes decía «Inicie sesión con GUB UY». */}
       </p>
     );
   }

@@ -1,3 +1,9 @@
+/**
+ * Registro con GUB UY: deprecado momentáneamente.
+ *
+ * Cliente OIDC (authorization code + PKCE) contra el IdP mock o GUB UY real.
+ * Se mantiene sin cambios de lógica para poder reactivarlo.
+ */
 import { config } from "../config";
 import { base64UrlSha256, randomToken, verifyHs256Jwt } from "./crypto";
 
@@ -23,7 +29,8 @@ export type LoginChallenge = {
   codeVerifier: string;
 };
 
-/** Authorization Code Flow + PKCE (S256). */
+/** Registro con GUB UY: deprecado momentáneamente.
+ * Authorization Code Flow + PKCE (S256). */
 export function createLoginChallenge(): LoginChallenge {
   const state = randomToken();
   const nonce = randomToken();
@@ -125,6 +132,7 @@ function toIdentity(claims: Record<string, unknown>): ExternalIdentity {
   };
 }
 
+// Registro con GUB UY: deprecado momentáneamente.
 export async function exchangeCodeForIdentity(input: {
   code: string;
   codeVerifier: string;

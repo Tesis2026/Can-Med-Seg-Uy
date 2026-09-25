@@ -41,6 +41,7 @@ después con `npm run db:migrate`.
 npm install
 cp .env.example .env      # ajustar DATABASE_URL / PORT si hace falta
 npm run db:migrate        # aplica apps/api/migrations en orden
+npm run admin:create -- --email admin@ejemplo.uy --password "una-clave-segura"   # primer admin
 npm run dev:api           # API en http://localhost:3000
 npm run dev               # web en http://localhost:5173 (proxy /api y /mock-idp)
 ```
@@ -49,29 +50,39 @@ La web usa el proxy de Vite, así que en desarrollo todo queda en el mismo orige
 la cookie de sesión funciona sin configuración extra. Si la API corre en otro
 puerto, definí `API_PROXY_TARGET` en el `.env`.
 
-## Autenticación (GUB UY)
+## Autenticación (email + contraseña)
 
-La app usa OIDC / Authorization Code Flow + PKCE. En desarrollo, `AUTH_PROVIDER=mock`
-levanta un **IdP simulado** en `/mock-idp` con cuentas de prueba:
+El ingreso es con **email y contraseña**, resuelto con [better-auth](https://better-auth.com)
+dentro de la API (open source, sin servicios externos ni telemetría: todo queda en
+nuestro Postgres). No hay registro público: **las cuentas las crea el administrador**
+desde **Gestión de usuarios** (`/admin/usuarios`), donde también puede cambiar
+contraseñas, activar, desactivar y borrar usuarios.
 
-| Cuenta | Rol |
-| --- | --- |
-| María González | Usuario común |
-| Diego Pereira | Profesional de la salud (médico) |
-| Carlos Méndez | Investigador |
-| Ana Rodríguez | Administrador |
+- **Desactivar** impide el ingreso y cierra las sesiones abiertas del usuario.
+- **Borrar** elimina la cuenta y **todos sus datos**: reportes enviados, formularios en
+  progreso, roles y sesiones. Las revisiones que hizo sobre reportes de otros se
+  conservan, sin revisor asignado.
 
-Todas incluyen el rol de usuario común: cualquiera de ellas puede reportar, guardar
-borradores y ver su historial, además de lo propio de su rol.
+El primer administrador se crea por consola:
 
-Los roles de la cuenta mock se siembran **solo en su primer ingreso**
-(`MOCK_IDP_SEED_ROLES=true`); después los administra el administrador del sistema.
+```bash
+npm run admin:create -- --email admin@ejemplo.uy --name "Administrador" --password "una-clave-segura"
+```
 
-Para apuntar a GUB UY real no hay que tocar código: `AUTH_PROVIDER=gubuy` y las
-variables `OIDC_*` del `.env`.
+Si el email ya existe, le agrega el rol de administrador, lo reactiva y le fija esa
+contraseña. En producción definí `BETTER_AUTH_SECRET` (32+ caracteres) en el `.env`.
 
 También se puede usar la app **sin iniciar sesión** (modo visitante): se puede
 llenar y enviar un reporte, pero no hay borradores ni historial.
+
+### Registro con GUB UY: deprecado momentáneamente
+
+El login OIDC con GUB UY sigue en el código sin cambios (rutas `/api/auth/login` y
+`/api/auth/callback`, IdP simulado en `/mock-idp` con `AUTH_PROVIDER=mock`), pero la
+web ya no muestra el botón. Los archivos y métodos involucrados están marcados con el
+comentario «Registro con GUB UY: deprecado momentáneamente.»; para reactivarlo alcanza
+con descomentar el bloque de `LoginPage.tsx`. Las cuentas mock (María González, Diego
+Pereira, Carlos Méndez, Ana Rodríguez) ya no tienen punto de entrada en la interfaz.
 
 ## Reportar sin sesión: CAPTCHA (RF-3.6)
 

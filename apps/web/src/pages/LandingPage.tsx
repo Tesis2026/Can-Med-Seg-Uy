@@ -55,8 +55,9 @@ export function LandingPage() {
           <Button variant="primary" type="button" onClick={handleReportClick}>
             Reportar evento adverso
           </Button>
+          {/* Registro con GUB UY: deprecado momentáneamente. Texto anterior: «Iniciar sesión con GUB UY». */}
           <Button variant="secondary" to="/login">
-            Iniciar sesión con GUB UY
+            Iniciar sesión
           </Button>
         </div>
       </section>

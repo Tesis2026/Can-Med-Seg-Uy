@@ -25,7 +25,12 @@ const environmentSchema = z.object({
   SESSION_COOKIE_SECURE: booleanFlag("false"),
   SESSION_COOKIE_SAME_SITE: z.enum(["lax", "strict", "none"]).default("lax"),
 
+  BETTER_AUTH_SECRET: z.string().min(32).default("canmedseg-better-auth-secreto-local-dev"),
+
   /**
+   * Registro con GUB UY: deprecado momentáneamente. Las variables AUTH_PROVIDER,
+   * OIDC_* y MOCK_IDP_SEED_ROLES se mantienen para poder reactivarlo sin cambios.
+   *
    * Proveedor de identidad. `mock` levanta el IdP local en /mock-idp;
    * `gubuy` usa los endpoints reales (solo cambian estas variables — RNF-6).
    */

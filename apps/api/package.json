@@ -7,12 +7,14 @@
     "dev": "tsx watch src/server.ts",
     "start": "tsx src/server.ts",
     "db:migrate": "tsx src/database/migrate.ts",
+    "admin:create": "tsx src/scripts/createAdmin.ts",
     "typecheck": "tsc --noEmit --pretty false"
   },
   "dependencies": {
     "@canmedseg/shared": "*",
     "@fastify/cors": "^10.0.2",
     "@fastify/formbody": "^8.0.2",
+    "better-auth": "^1.7.6",
     "dotenv": "^16.4.7",
     "exceljs": "^4.4.0",
     "fastify": "^5.2.1",

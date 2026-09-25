@@ -1,3 +1,9 @@
+/**
+ * Registro con GUB UY: deprecado momentáneamente.
+ *
+ * Estado (state, nonce, PKCE) del authorization code flow.
+ * Se mantiene sin cambios de lógica para poder reactivarlo.
+ */
 import type { Pool } from "pg";
 
 import { loginStateTtlMs } from "../config";
@@ -8,6 +14,7 @@ export type LoginState = {
   returnTo: string | null;
 };
 
+// Registro con GUB UY: deprecado momentáneamente.
 export async function saveLoginState(
   pool: Pool,
   input: { state: string; nonce: string; codeVerifier: string; returnTo: string | null },
@@ -19,7 +26,8 @@ export async function saveLoginState(
   );
 }
 
-/** Consume el state una sola vez (protección CSRF del callback). */
+/** Registro con GUB UY: deprecado momentáneamente.
+ * Consume el state una sola vez (protección CSRF del callback). */
 export async function consumeLoginState(pool: Pool, state: string): Promise<LoginState | null> {
   const result = await pool.query<{
     nonce: string;

@@ -65,7 +65,8 @@ async function readRoles(client: Pool | PoolClient, userId: string): Promise<Use
   return result.rows.map(toUserRole);
 }
 
-/** Roles sugeridos por el IdP mock, filtrados contra los enums de shared. */
+/** Registro con GUB UY: deprecado momentáneamente.
+ * Roles sugeridos por el IdP mock, filtrados contra los enums de shared. */
 function sanitizeSeedRoles(identity: ExternalIdentity): UserRole[] {
   const roles = new Map<AssignableRole, HealthProfessionSubtypeValue | null>();
   roles.set(Role.Comun, null);
@@ -83,6 +84,8 @@ function sanitizeSeedRoles(identity: ExternalIdentity): UserRole[] {
 }
 
 /**
+ * Registro con GUB UY: deprecado momentáneamente.
+ *
  * Alta o actualización del usuario a partir de la identidad del IdP.
  * `seedRoles` solo aplica en el primer ingreso y solo con el IdP mock (dev):
  * en producción los roles los otorga el administrador (RF-2.4).

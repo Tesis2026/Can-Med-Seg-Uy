@@ -148,6 +148,11 @@ function HeaderMenu() {
               </Link>
             </>
           ) : null}
+          {hasPermission(session.permissions, Permission.UsersManage) ? (
+            <Link className={styles.menuItem} role="menuitem" to="/admin/usuarios">
+              Gestión de usuarios
+            </Link>
+          ) : null}
           {session.authenticated ? (
             <>
               <Link
@@ -178,7 +183,8 @@ function HeaderMenu() {
               role="menuitem"
               to={`/login?returnTo=${encodeURIComponent(location.pathname)}`}
             >
-              Iniciar sesión con GUB UY
+              {/* Registro con GUB UY: deprecado momentáneamente. Texto anterior: «Iniciar sesión con GUB UY». */}
+              Iniciar sesión
             </Link>
           )}
         </div>
