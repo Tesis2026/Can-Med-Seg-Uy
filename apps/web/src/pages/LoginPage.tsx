@@ -1,12 +1,18 @@
-import { useEffect } from "react";
+import { signInInputSchema } from "@canmedseg/shared";
+import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
-import { loginUrl } from "../features/auth/authApi";
+// Registro con GUB UY: deprecado momentáneamente.
+// import { loginUrl } from "../features/auth/authApi";
 import { useSession } from "../features/auth/SessionContext";
+import { Field, TextInput } from "../features/reporte/FormFields";
 
 import styles from "./LoginPage.module.css";
 
-/** Mensajes de error que devuelve GET /api/auth/callback. */
+/**
+ * Registro con GUB UY: deprecado momentáneamente. Mensajes de error que devuelve
+ * GET /api/auth/callback; se mantienen porque la ruta sigue existiendo.
+ */
 const ERROR_MESSAGES: Record<string, { title: string; detail: string }> = {
   idp: {
     title: "No se pudo iniciar sesión. Verifique su cuenta gub.uy o intente nuevamente.",
@@ -30,10 +36,18 @@ const ERROR_MESSAGES: Record<string, { title: string; detail: string }> = {
   },
 };
 
+type FieldErrors = Partial<Record<"email" | "password", string>>;
+
 export function LoginPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { session, loading, offline } = useSession();
+  const { session, loading, offline, signIn } = useSession();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const returnTo = searchParams.get("returnTo") ?? undefined;
   const errorCode = searchParams.get("error");
@@ -45,8 +59,37 @@ export function LoginPage() {
     }
   }, [loading, session.authenticated, navigate, returnTo]);
 
-  function handleLogin() {
-    window.location.assign(loginUrl(returnTo));
+  // Registro con GUB UY: deprecado momentáneamente.
+  // function handleLogin() {
+  //   window.location.assign(loginUrl(returnTo));
+  // }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSubmitError(null);
+
+    const parsed = signInInputSchema.safeParse({ email, password });
+    if (!parsed.success) {
+      const errors: FieldErrors = {};
+      for (const issue of parsed.error.issues) {
+        const field = issue.path[0];
+        if ((field === "email" || field === "password") && !errors[field]) {
+          errors[field] = issue.message;
+        }
+      }
+      setFieldErrors(errors);
+      return;
+    }
+
+    setFieldErrors({});
+    setSubmitting(true);
+    try {
+      // Al quedar autenticado, el efecto de arriba redirige a `returnTo`.
+      await signIn(parsed.data);
+    } catch (cause) {
+      setSubmitError(cause instanceof Error ? cause.message : "No se pudo iniciar sesión.");
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -56,8 +99,41 @@ export function LoginPage() {
           <h1 id="login-title" className={styles.title}>
             Iniciar sesión
           </h1>
-          <p className={styles.subtitle}>Acceda con su cuenta gub.uy para continuar.</p>
+          <p className={styles.subtitle}>Ingrese con el email y la contraseña de su cuenta.</p>
         </div>
+
+        <form className={styles.formBlk} onSubmit={(event) => void handleSubmit(event)} noValidate>
+          <Field label="Email" htmlFor="login-email" error={fieldErrors.email}>
+            <TextInput
+              id="login-email"
+              type="email"
+              autoComplete="email"
+              value={email}
+              hasError={Boolean(fieldErrors.email)}
+              onChange={(event) => setEmail(event.target.value)}
+            />
+          </Field>
+          <Field label="Contraseña" htmlFor="login-password" error={fieldErrors.password}>
+            <TextInput
+              id="login-password"
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              hasError={Boolean(fieldErrors.password)}
+              onChange={(event) => setPassword(event.target.value)}
+            />
+          </Field>
+          <button type="submit" className={styles.submitBtn} disabled={offline || submitting}>
+            {submitting ? "Ingresando…" : "Ingresar"}
+          </button>
+          <p className={styles.hint}>
+            Las cuentas las crea el administrador del sistema.
+          </p>
+        </form>
+
+        {/*
+          Registro con GUB UY: deprecado momentáneamente. Para reactivarlo, descomentar
+          este bloque, `handleLogin` y el import de `loginUrl`.
 
         <div className={styles.gubBlk}>
           <button type="button" className={styles.gubBtn} onClick={handleLogin} disabled={offline}>
@@ -67,6 +143,18 @@ export function LoginPage() {
             Será redirigido al portal de identidad digital de gub.uy.
           </p>
         </div>
+        */}
+
+        {submitError ? (
+          <div className={styles.errBox} role="alert">
+            <span className={styles.errIcon} aria-hidden="true">
+              !
+            </span>
+            <div className={styles.errTxt}>
+              <p className={styles.errTitle}>{submitError}</p>
+            </div>
+          </div>
+        ) : null}
 
         {error ? (
           <div className={styles.errBox} role="alert">
@@ -86,7 +174,7 @@ export function LoginPage() {
               !
             </span>
             <div className={styles.errTxt}>
-              <p className={styles.errTitle}>El servicio de identidad no está disponible.</p>
+              <p className={styles.errTitle}>El servicio de inicio de sesión no está disponible.</p>
               <p className={styles.errDetail}>
                 Puede continuar como visitante y enviar su reporte sin iniciar sesión.
               </p>

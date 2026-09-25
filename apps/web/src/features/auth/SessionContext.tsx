@@ -1,4 +1,9 @@
-import { anonymousSession, type Session, type SessionUser } from "@canmedseg/shared";
+import {
+  anonymousSession,
+  type Session,
+  type SessionUser,
+  type SignInInput,
+} from "@canmedseg/shared";
 import {
   createContext,
   useCallback,
@@ -9,7 +14,12 @@ import {
   type ReactNode,
 } from "react";
 
-import { acceptConsent as postConsent, fetchSession, logout as postLogout } from "./authApi";
+import {
+  acceptConsent as postConsent,
+  fetchSession,
+  logout as postLogout,
+  signIn as postSignIn,
+} from "./authApi";
 
 type SessionState = {
   session: Session;
@@ -18,6 +28,8 @@ type SessionState = {
   offline: boolean;
   user: SessionUser | null;
   refresh: () => Promise<void>;
+  /** Ingreso con email + contraseña; deja la sesión cargada al terminar. */
+  signIn: (input: SignInInput) => Promise<void>;
   acceptConsent: () => Promise<void>;
   logout: () => Promise<void>;
 };
@@ -46,6 +58,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     void refresh();
   }, [refresh]);
 
+  const signIn = useCallback(async (input: SignInInput) => {
+    await postSignIn(input);
+    setSession(await fetchSession());
+  }, []);
+
   const acceptConsent = useCallback(async () => {
     setSession(await postConsent());
   }, []);
@@ -62,10 +79,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       offline,
       user,
       refresh,
+      signIn,
       acceptConsent,
       logout,
     };
-  }, [session, loading, offline, refresh, acceptConsent, logout]);
+  }, [session, loading, offline, refresh, signIn, acceptConsent, logout]);
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }

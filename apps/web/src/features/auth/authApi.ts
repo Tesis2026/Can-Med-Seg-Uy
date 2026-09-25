@@ -3,14 +3,39 @@ import {
   anonymousSession,
   sessionSchema,
   type Session,
+  type SignInInput,
 } from "@canmedseg/shared";
 
 import { ApiError, apiFetch, apiUrl } from "../../lib/api";
 
-/** URL de inicio del login OIDC; se navega con `window.location` (redirect al IdP). */
+/**
+ * Registro con GUB UY: deprecado momentáneamente (la web ya no lo enlaza).
+ *
+ * URL de inicio del login OIDC; se navega con `window.location` (redirect al IdP).
+ */
 export function loginUrl(returnTo?: string): string {
   const search = returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : "";
   return apiUrl(`/api/auth/login${search}`);
+}
+
+/**
+ * Ingreso con email + contraseña (better-auth). La cookie de sesión la deja la
+ * API; después hay que volver a leer `/api/auth/session`.
+ */
+export async function signIn(input: SignInInput): Promise<void> {
+  try {
+    await apiFetch("/api/auth/sign-in/email", {
+      method: "POST",
+      body: input,
+      fallbackMessage: "No se pudo iniciar sesión. Intente nuevamente.",
+    });
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401) {
+      throw new ApiError("Email o contraseña incorrectos.", 401);
+    }
+    // 403: cuenta desactivada; la API ya devuelve el mensaje en español.
+    throw error;
+  }
 }
 
 export async function fetchSession(): Promise<Session> {

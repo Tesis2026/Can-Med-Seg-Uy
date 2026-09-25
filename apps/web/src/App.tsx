@@ -6,6 +6,7 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { DetalleReportePage } from "./pages/DetalleReportePage";
 import { ExportacionesPage } from "./pages/ExportacionesPage";
 import { FormulariosEnProgresoPage } from "./pages/FormulariosEnProgresoPage";
+import { GestionUsuariosPage } from "./pages/GestionUsuariosPage";
 import { HistorialPage } from "./pages/HistorialPage";
 import { InicioPage } from "./pages/InicioPage";
 import { LandingPage } from "./pages/LandingPage";
@@ -52,6 +53,8 @@ export function App() {
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="exportaciones" element={<ExportacionesPage />} />
         <Route path="reportes-periodicos" element={<ReportesPeriodicosPage />} />
+        {/* RF-11: gestión de usuarios del administrador. */}
+        <Route path="admin/usuarios" element={<GestionUsuariosPage />} />
       </Route>
       {/* La home personal se mudó a la raíz; el retorno del login sigue funcionando. */}
       <Route path="inicio" element={<Navigate to="/" replace />} />
