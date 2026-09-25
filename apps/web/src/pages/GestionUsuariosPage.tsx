@@ -24,7 +24,6 @@ type Dialog =
   | { kind: "delete"; user: AdminUser }
   | null;
 
-/** Etiqueta de un rol; el profesional de la salud muestra su subtipo. */
 function roleLabel(entry: UserRole): string {
   if (entry.role === Role.ProfesionalSalud && entry.healthProfessionSubtype) {
     return HEALTH_PROFESSION_SUBTYPE_LABELS[entry.healthProfessionSubtype];
@@ -32,7 +31,6 @@ function roleLabel(entry: UserRole): string {
   return ROLE_LABELS[entry.role];
 }
 
-/** Gestión de usuarios del administrador (RF-11): alta, contraseña, activación y baja. */
 export function GestionUsuariosPage() {
   const { session, user: currentUser, loading: sessionLoading } = useSession();
   const [users, setUsers] = useState<AdminUser[] | null>(null);
@@ -93,8 +91,24 @@ export function GestionUsuariosPage() {
     return <p className={styles.state}>Cargando…</p>;
   }
 
-  if (!session.authenticated || !canManage) {
+  if (!session.authenticated) {
     return <Navigate to="/login?returnTo=%2Fadmin%2Fusuarios" replace />;
+  }
+
+  if (!canManage) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.titleBlock}>
+          <h1 className={styles.title}>Gestión de usuarios</h1>
+        </div>
+        <div className={styles.empty}>
+          <p className={styles.emptyText}>
+            No tiene permisos para ver esta página. Solo el administrador del sistema gestiona
+            los usuarios.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (
