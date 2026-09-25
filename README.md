@@ -75,6 +75,28 @@ contraseña. En producción definí `BETTER_AUTH_SECRET` (32+ caracteres) en el 
 También se puede usar la app **sin iniciar sesión** (modo visitante): se puede
 llenar y enviar un reporte, pero no hay borradores ni historial.
 
+### Recuperar la contraseña
+
+Desde el login, «¿Olvidó su contraseña?» envía un enlace de un solo uso que vence en
+1 hora. Al elegir la contraseña nueva se cierran las sesiones abiertas de la cuenta.
+Las cuentas desactivadas no reciben el enlace, y la respuesta es la misma exista o no
+el email.
+
+Los mails salen por **SMTP** (nodemailer). Sin `SMTP_HOST` en el `.env` no se envían:
+se escriben en el log de la API con el enlace, útil para desarrollo. Para enviarlos de
+verdad sirve cualquier SMTP gratuito, por ejemplo Gmail con una
+[contraseña de aplicación](https://support.google.com/accounts/answer/185833):
+
+```dotenv
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=cuenta@gmail.com
+SMTP_PASS=contraseña-de-aplicacion
+EMAIL_FROM=Farmacovigilancia MSP <cuenta@gmail.com>
+```
+
+Los pedidos de enlace están limitados a 3 por minuto por IP.
+
 ### Registro con GUB UY: deprecado momentáneamente
 
 El login OIDC con GUB UY sigue en el código sin cambios (rutas `/api/auth/login` y

@@ -27,6 +27,13 @@ const environmentSchema = z.object({
 
   BETTER_AUTH_SECRET: z.string().min(32).default("canmedseg-better-auth-secreto-local-dev"),
 
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().int().positive().default(587),
+  SMTP_SECURE: booleanFlag("false"),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  EMAIL_FROM: z.string().min(1).default("Farmacovigilancia MSP <no-responder@localhost>"),
+
   /**
    * Registro con GUB UY: deprecado momentáneamente. Las variables AUTH_PROVIDER,
    * OIDC_* y MOCK_IDP_SEED_ROLES se mantienen para poder reactivarlo sin cambios.

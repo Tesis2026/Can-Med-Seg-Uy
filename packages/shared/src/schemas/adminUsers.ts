@@ -72,3 +72,21 @@ export const signInInputSchema = z.object({
 });
 
 export type SignInInput = z.infer<typeof signInInputSchema>;
+
+export const requestPasswordResetInputSchema = z.object({
+  email: z.string().trim().toLowerCase().email("Ingrese un email válido"),
+});
+
+export type RequestPasswordResetInput = z.infer<typeof requestPasswordResetInputSchema>;
+
+export const resetPasswordInputSchema = z
+  .object({
+    password: passwordSchema,
+    confirmation: z.string(),
+  })
+  .refine((value) => value.password === value.confirmation, {
+    path: ["confirmation"],
+    message: "Las contraseñas no coinciden",
+  });
+
+export type ResetPasswordInput = z.infer<typeof resetPasswordInputSchema>;

@@ -130,6 +130,14 @@ export async function countOtherActiveAdmins(pool: Pool, userId: string): Promis
   return Number(result.rows[0]?.count ?? 0);
 }
 
+export async function isUserActive(pool: Pool, userId: string): Promise<boolean> {
+  const result = await pool.query<{ active: boolean }>(
+    `SELECT disabled_at IS NULL AND NOT banned AS active FROM users WHERE id = $1`,
+    [userId],
+  );
+  return result.rows[0]?.active ?? false;
+}
+
 export async function recordLogin(pool: Pool, userId: string): Promise<void> {
   await pool.query(
     `UPDATE users

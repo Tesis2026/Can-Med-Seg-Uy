@@ -2,7 +2,13 @@ import type { FastifyPluginAsync } from "fastify";
 
 import { auth } from "./betterAuth";
 
-const PUBLIC_ENDPOINTS = ["/auth/sign-in/email", "/auth/sign-out", "/auth/get-session"];
+const PUBLIC_ENDPOINTS = [
+  "/auth/sign-in/email",
+  "/auth/sign-out",
+  "/auth/get-session",
+  "/auth/request-password-reset",
+  "/auth/reset-password",
+];
 
 export const betterAuthRoutes: FastifyPluginAsync = async (app) => {
   for (const path of PUBLIC_ENDPOINTS) {
@@ -15,6 +21,8 @@ export const betterAuthRoutes: FastifyPluginAsync = async (app) => {
           if (value === undefined) continue;
           headers.set(key, Array.isArray(value) ? value.join(", ") : value);
         }
+
+        if (!headers.has("x-forwarded-for")) headers.set("x-forwarded-for", request.ip);
 
         headers.delete("content-length");
         headers.delete("transfer-encoding");
