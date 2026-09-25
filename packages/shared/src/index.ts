@@ -212,8 +212,12 @@ export {
   createUserInputSchema,
   setUserPasswordInputSchema,
   signInInputSchema,
+  requestPasswordResetInputSchema,
+  resetPasswordInputSchema,
   type AdminUser,
   type CreateUserInput,
   type SetUserPasswordInput,
   type SignInInput,
+  type RequestPasswordResetInput,
+  type ResetPasswordInput,
 } from "./schemas/adminUsers";
