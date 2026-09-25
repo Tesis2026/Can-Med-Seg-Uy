@@ -147,7 +147,6 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
     }
   });
 
-  /** Cierra la sesión de better-auth y, si existe, la legacy de GUB UY. */
   app.post("/auth/logout", async (request, reply) => {
     const cookies: string[] = [];
 

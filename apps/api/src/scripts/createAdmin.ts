@@ -7,14 +7,6 @@ import { auth } from "../auth/betterAuth";
 import { runMigrations } from "../database/migrate";
 import { pool } from "../database/pool";
 
-/**
- * Crea (o promueve) un administrador con email + contraseña. Es la única forma de
- * tener el primer admin: el registro público está deshabilitado.
- *
- *   npm run admin:create -- --email admin@ejemplo.uy --name "Admin" --password "********"
- *
- * Si el email ya existe, le agrega el rol admin, lo reactiva y le fija la contraseña.
- */
 async function main(): Promise<void> {
   const { values } = parseArgs({
     options: {
@@ -61,7 +53,6 @@ async function main(): Promise<void> {
     );
     console.info(`Usuario existente: ${email}. Se le asigna el rol administrador.`);
   } else {
-    // Del lado servidor y sin headers, better-auth permite el alta sin sesión.
     const created = await auth.api.createUser({
       body: { email, password, name, role: "admin" },
     });

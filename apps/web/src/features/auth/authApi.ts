@@ -18,10 +18,6 @@ export function loginUrl(returnTo?: string): string {
   return apiUrl(`/api/auth/login${search}`);
 }
 
-/**
- * Ingreso con email + contraseña (better-auth). La cookie de sesión la deja la
- * API; después hay que volver a leer `/api/auth/session`.
- */
 export async function signIn(input: SignInInput): Promise<void> {
   try {
     await apiFetch("/api/auth/sign-in/email", {
@@ -33,7 +29,6 @@ export async function signIn(input: SignInInput): Promise<void> {
     if (error instanceof ApiError && error.status === 401) {
       throw new ApiError("Email o contraseña incorrectos.", 401);
     }
-    // 403: cuenta desactivada; la API ya devuelve el mensaje en español.
     throw error;
   }
 }

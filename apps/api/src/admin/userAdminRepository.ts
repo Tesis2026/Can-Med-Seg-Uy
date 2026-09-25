@@ -49,7 +49,6 @@ const SELECT_ADMIN_USERS = `
     FROM users u
     LEFT JOIN user_roles r ON r.user_id = u.id`;
 
-/** Listado del administrador (RF-11.1): activos primero, después por nombre. */
 export async function listAdminUsers(pool: Pool): Promise<AdminUser[]> {
   const result = await pool.query<AdminUserRow>(
     `${SELECT_ADMIN_USERS}
@@ -70,10 +69,6 @@ export async function findAdminUser(pool: Pool, userId: string): Promise<AdminUs
   return row ? toAdminUser(row) : null;
 }
 
-/**
- * Completa el alta hecha por better-auth: marca la cuenta como local, guarda los
- * roles (siempre con `comun`) y actualiza el espejo `users.role` del plugin admin.
- */
 export async function assignInitialRoles(
   pool: Pool,
   userId: string,
@@ -124,7 +119,6 @@ export async function setUserDisabled(pool: Pool, userId: string, disabled: bool
   );
 }
 
-/** Administradores activos distintos de `userId` (para no dejar el sistema sin admin). */
 export async function countOtherActiveAdmins(pool: Pool, userId: string): Promise<number> {
   const result = await pool.query<{ count: string }>(
     `SELECT count(*) AS count
@@ -136,7 +130,6 @@ export async function countOtherActiveAdmins(pool: Pool, userId: string): Promis
   return Number(result.rows[0]?.count ?? 0);
 }
 
-/** Registra el ingreso (lo muestra el listado del administrador). */
 export async function recordLogin(pool: Pool, userId: string): Promise<void> {
   await pool.query(
     `UPDATE users

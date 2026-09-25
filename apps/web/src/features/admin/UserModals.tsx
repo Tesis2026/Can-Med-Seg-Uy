@@ -24,7 +24,6 @@ type ModalFrameProps = {
   children: ReactNode;
 };
 
-/** Marco común de los modales (mismo estilo que los de consentimiento). */
 function ModalFrame({ title, onClose, children }: ModalFrameProps) {
   const titleId = useId();
 
@@ -57,7 +56,6 @@ function errorMessage(cause: unknown, fallback: string): string {
   return cause instanceof Error ? cause.message : fallback;
 }
 
-/** Roles que el administrador puede marcar; `comun` va siempre. */
 const SELECTABLE_ROLES = ASSIGNABLE_ROLES.filter((role) => role !== Role.Comun);
 
 type CreateErrors = Partial<Record<"displayName" | "email" | "password" | "subtype", string>>;

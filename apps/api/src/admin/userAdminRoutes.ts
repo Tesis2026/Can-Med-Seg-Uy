@@ -24,7 +24,6 @@ import {
 
 const userParamsSchema = z.object({ id: z.string().uuid() });
 
-/** Mensajes en español para los códigos de better-auth que puede ver el administrador. */
 const AUTH_ERROR_MESSAGES: Record<string, string> = {
   USER_ALREADY_EXISTS: "Ya existe un usuario con ese email.",
   USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL: "Ya existe un usuario con ese email.",
@@ -33,10 +32,6 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
   USER_NOT_FOUND: "Usuario no encontrado.",
 };
 
-/**
- * Las operaciones se delegan en better-auth con los headers del administrador:
- * además del guard de la app, better-auth valida su sesión y el rol espejo.
- */
 function betterAuthHeaders(request: FastifyRequest): Headers {
   return fromNodeHeaders(request.headers);
 }
@@ -60,10 +55,6 @@ function sendError(reply: FastifyReply, request: FastifyRequest, error: unknown)
   return reply.code(500).send({ message: "Error interno del servidor" });
 }
 
-/**
- * Evita que el administrador se quede afuera: no puede actuar sobre sí mismo ni
- * dejar el sistema sin ningún admin activo.
- */
 async function guardProtectedTarget(
   request: FastifyRequest,
   reply: FastifyReply,
@@ -89,7 +80,6 @@ async function guardProtectedTarget(
   return true;
 }
 
-/** Gestión de usuarios del administrador (RF-11). */
 export const userAdminRoutes: FastifyPluginAsync = async (app) => {
   const preHandler = requirePermission(Permission.UsersManage);
 
@@ -119,7 +109,6 @@ export const userAdminRoutes: FastifyPluginAsync = async (app) => {
     try {
       await assignInitialRoles(pool, userId, input.roles, request.auth.user?.id ?? null);
     } catch (error) {
-      // Sin roles la cuenta queda a medias: se deshace el alta.
       await auth.api
         .removeUser({ headers: betterAuthHeaders(request), body: { userId } })
         .catch((cleanupError: unknown) =>
@@ -151,7 +140,6 @@ export const userAdminRoutes: FastifyPluginAsync = async (app) => {
     if (!(await guardProtectedTarget(request, reply, id, "desactivar"))) return reply;
 
     try {
-      // El ban bloquea el login y revoca sus sesiones de better-auth.
       await auth.api.banUser({
         headers: betterAuthHeaders(request),
         body: { userId: id, banReason: "Desactivado por el administrador" },
@@ -176,7 +164,6 @@ export const userAdminRoutes: FastifyPluginAsync = async (app) => {
     return reply.send(adminUserSchema.parse(user));
   });
 
-  /** Borrado físico: la base elimina en cascada sus reportes, borradores, roles y sesiones. */
   app.delete("/admin/users/:id", { preHandler }, async (request, reply) => {
     const { id } = userParamsSchema.parse(request.params);
     if (!(await guardProtectedTarget(request, reply, id, "borrar"))) return reply;

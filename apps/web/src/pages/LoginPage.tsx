@@ -84,7 +84,6 @@ export function LoginPage() {
     setFieldErrors({});
     setSubmitting(true);
     try {
-      // Al quedar autenticado, el efecto de arriba redirige a `returnTo`.
       await signIn(parsed.data);
     } catch (cause) {
       setSubmitError(cause instanceof Error ? cause.message : "No se pudo iniciar sesión.");

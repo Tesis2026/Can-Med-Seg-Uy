@@ -28,7 +28,6 @@ type SessionState = {
   offline: boolean;
   user: SessionUser | null;
   refresh: () => Promise<void>;
-  /** Ingreso con email + contraseña; deja la sesión cargada al terminar. */
   signIn: (input: SignInInput) => Promise<void>;
   acceptConsent: () => Promise<void>;
   logout: () => Promise<void>;

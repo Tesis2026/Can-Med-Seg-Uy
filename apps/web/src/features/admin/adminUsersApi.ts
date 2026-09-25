@@ -7,8 +7,6 @@ import {
 
 import { apiFetch } from "../../lib/api";
 
-/** Gestión de usuarios del administrador (RF-11). */
-
 export async function listUsers(): Promise<AdminUser[]> {
   return adminUserListSchema.parse(
     await apiFetch("/api/admin/users", { fallbackMessage: "No se pudo cargar el listado de usuarios." }),

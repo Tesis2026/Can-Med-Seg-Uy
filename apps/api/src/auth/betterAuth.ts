@@ -6,28 +6,15 @@ import { recordLogin } from "../admin/userAdminRepository";
 import { config } from "../config";
 import { pool } from "../database/pool";
 
-/**
- * Ingreso con email + contraseña y administración de cuentas (RF-11).
- *
- * better-auth corre dentro de la API y persiste en nuestro Postgres: no hay
- * servicio externo ni telemetría. Usa la tabla `users` existente (con los campos
- * mapeados a sus columnas) y tablas propias para credenciales y sesiones; la
- * tabla `sessions` sigue siendo la del login con GUB UY.
- *
- * Los roles de la app viven en `user_roles`. `users.role` es solo el espejo que
- * el plugin admin necesita para autorizar sus endpoints (`admin` | `user`).
- */
 export const auth = betterAuth({
   database: pool,
   basePath: "/api/auth",
-  // La web llega a la API por el mismo origen (proxy de Vite en desarrollo).
   baseURL: config.WEB_BASE_URL,
   secret: config.BETTER_AUTH_SECRET,
   trustedOrigins: config.CORS_ORIGIN.split(",").map((origin) => origin.trim()),
   telemetry: { enabled: false },
   emailAndPassword: {
     enabled: true,
-    // Solo el administrador crea cuentas.
     disableSignUp: true,
     minPasswordLength: PASSWORD_MIN_LENGTH,
     maxPasswordLength: PASSWORD_MAX_LENGTH,
@@ -88,7 +75,6 @@ export const auth = betterAuth({
   advanced: {
     cookiePrefix: "canmedseg",
     useSecureCookies: config.SESSION_COOKIE_SECURE,
-    // Las PK de la base son uuid.
     database: { generateId: "uuid" },
   },
   plugins: [

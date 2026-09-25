@@ -18,9 +18,8 @@ import { findSessionUser } from "./userRepository";
 
 /** Contexto de autenticación disponible en cada request. */
 export type AuthContext = {
-  /** Origen de la sesión: better-auth (email + contraseña) o la cookie legacy de GUB UY. */
   source: "better-auth" | "gubuy" | null;
-  /** Token de la cookie legacy (necesario para revocar esa sesión en el logout). */
+  /** Token de la cookie (necesario para revocar la sesión en el logout). */
   token: string | null;
   sessionId: string | null;
   expiresAt: Date | null;
@@ -61,12 +60,10 @@ function authenticated(
   };
 }
 
-/** Sesión de better-auth (ingreso con email + contraseña). */
 async function resolveBetterAuthSession(request: FastifyRequest): Promise<AuthContext | null> {
   const result = await auth.api.getSession({ headers: fromNodeHeaders(request.headers) });
   if (!result) return null;
 
-  // `findSessionUser` descarta cuentas desactivadas aunque la sesión siga viva.
   const user = await findSessionUser(pool, result.user.id);
   if (!user) return null;
 
@@ -92,11 +89,9 @@ async function resolveGubUySession(request: FastifyRequest): Promise<AuthContext
 }
 
 /**
- * Resuelve la sesión desde las cookies httpOnly. Nunca falla la request: una
+ * Resuelve la sesión desde la cookie httpOnly. Nunca falla la request: una
  * petición sin sesión queda como visitante anónimo (RF-1.2) y son los guards los
  * que deciden si eso alcanza.
- *
- * Primero se busca la sesión de better-auth y, si no hay, la legacy de GUB UY.
  *
  * Se aplica directamente sobre la instancia (sin `register`) para que el hook no
  * quede encapsulado y valga también para los plugins de rutas hermanos.

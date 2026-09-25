@@ -3,7 +3,6 @@ import { z } from "zod";
 import { Role } from "../enums/role";
 import { userRoleSchema } from "./auth";
 
-/** Límites de la contraseña; better-auth se configura con los mismos valores. */
 export const PASSWORD_MIN_LENGTH = 8;
 export const PASSWORD_MAX_LENGTH = 128;
 
@@ -12,7 +11,6 @@ const passwordSchema = z
   .min(PASSWORD_MIN_LENGTH, `La contraseña debe tener al menos ${PASSWORD_MIN_LENGTH} caracteres`)
   .max(PASSWORD_MAX_LENGTH, `La contraseña no puede superar los ${PASSWORD_MAX_LENGTH} caracteres`);
 
-/** Fila del listado de usuarios del administrador (RF-11.1). */
 export const adminUserSchema = z.object({
   id: z.string().uuid(),
   displayName: z.string(),
@@ -32,7 +30,6 @@ export type AdminUser = z.infer<typeof adminUserSchema>;
 
 export const adminUserListSchema = z.array(adminUserSchema);
 
-/** Alta de un usuario por el administrador. `comun` se agrega siempre en la API. */
 export const createUserInputSchema = z
   .object({
     displayName: z.string().trim().min(1, "Ingrese el nombre").max(120),
@@ -69,7 +66,6 @@ export const setUserPasswordInputSchema = z.object({
 
 export type SetUserPasswordInput = z.infer<typeof setUserPasswordInputSchema>;
 
-/** Ingreso con email + contraseña (POST /api/auth/sign-in/email de better-auth). */
 export const signInInputSchema = z.object({
   email: z.string().trim().toLowerCase().email("Ingrese un email válido"),
   password: z.string().min(1, "Ingrese su contraseña"),

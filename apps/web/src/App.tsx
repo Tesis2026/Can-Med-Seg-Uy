@@ -53,7 +53,6 @@ export function App() {
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="exportaciones" element={<ExportacionesPage />} />
         <Route path="reportes-periodicos" element={<ReportesPeriodicosPage />} />
-        {/* RF-11: gestión de usuarios del administrador. */}
         <Route path="admin/usuarios" element={<GestionUsuariosPage />} />
       </Route>
       {/* La home personal se mudó a la raíz; el retorno del login sigue funcionando. */}
