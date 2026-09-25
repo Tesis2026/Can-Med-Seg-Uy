@@ -10,6 +10,7 @@
     "dev": "npm run dev -w @canmedseg/web",
     "dev:api": "npm run dev -w @canmedseg/api",
     "db:migrate": "npm run db:migrate -w @canmedseg/api",
+    "admin:create": "npm run admin:create -w @canmedseg/api --",
     "build": "npm run build -w @canmedseg/web",
     "typecheck": "npm run typecheck -w @canmedseg/shared && npm run typecheck -w @canmedseg/api && npm run typecheck -w @canmedseg/web"
   },

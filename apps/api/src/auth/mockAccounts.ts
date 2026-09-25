@@ -1,3 +1,9 @@
+/**
+ * Registro con GUB UY: deprecado momentáneamente.
+ *
+ * Cuentas de prueba del IdP mock.
+ * Se mantiene sin cambios de lógica para poder reactivarlo.
+ */
 import {
   HealthProfessionSubtype,
   Role,
@@ -81,6 +87,7 @@ export const MOCK_ACCOUNTS: MockAccount[] = [
   },
 ];
 
+// Registro con GUB UY: deprecado momentáneamente.
 export function findMockAccount(id: string): MockAccount | undefined {
   return MOCK_ACCOUNTS.find((account) => account.id === id);
 }

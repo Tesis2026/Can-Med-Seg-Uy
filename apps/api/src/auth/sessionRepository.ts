@@ -1,3 +1,9 @@
+/**
+ * Registro con GUB UY: deprecado momentáneamente.
+ *
+ * Sesiones de la cookie legacy del login OIDC (tabla `sessions`). Las de email + contraseña las maneja better-auth en `auth_sessions`.
+ * Se mantiene sin cambios de lógica para poder reactivarlo.
+ */
 import type { Pool } from "pg";
 
 import { sessionTtlMs } from "../config";
@@ -15,6 +21,7 @@ export type ActiveSession = {
   expiresAt: Date;
 };
 
+// Registro con GUB UY: deprecado momentáneamente.
 export async function createSession(
   pool: Pool,
   userId: string,
@@ -32,7 +39,8 @@ export async function createSession(
   return { token, id: row.id, expiresAt: row.expires_at };
 }
 
-/** Busca la sesión vigente y refresca `last_seen_at` en la misma consulta. */
+/** Registro con GUB UY: deprecado momentáneamente.
+ * Busca la sesión vigente y refresca `last_seen_at` en la misma consulta. */
 export async function touchSession(pool: Pool, token: string): Promise<ActiveSession | null> {
   const result = await pool.query<{ id: string; user_id: string; expires_at: Date }>(
     `UPDATE sessions
@@ -46,6 +54,7 @@ export async function touchSession(pool: Pool, token: string): Promise<ActiveSes
   return { id: row.id, userId: row.user_id, expiresAt: row.expires_at };
 }
 
+// Registro con GUB UY: deprecado momentáneamente.
 export async function revokeSession(pool: Pool, token: string): Promise<void> {
   await pool.query(
     `UPDATE sessions SET revoked_at = now() WHERE token_hash = $1 AND revoked_at IS NULL`,

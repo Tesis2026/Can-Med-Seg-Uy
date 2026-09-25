@@ -2,8 +2,10 @@ import cors from "@fastify/cors";
 import formbody from "@fastify/formbody";
 import Fastify from "fastify";
 
+import { userAdminRoutes } from "./admin/userAdminRoutes";
 import { registerAuthContext } from "./auth/authContext";
 import { authRoutes } from "./auth/authRoutes";
+import { betterAuthRoutes } from "./auth/betterAuthRoutes";
 import { mockIdpRoutes } from "./auth/mockIdpRoutes";
 import { analyticsRoutes } from "./analytics/analyticsRoutes";
 import { captchaRoutes } from "./captcha/captchaRoutes";
@@ -39,7 +41,9 @@ export async function buildApp() {
     const zodIssues = getZodIssues(error);
     if (zodIssues) {
       return reply.code(400).send({
-        message: "El reporte contiene datos inválidos o incompletos",
+        message: request.url.startsWith("/api/admin/")
+          ? "Los datos ingresados son inválidos o están incompletos"
+          : "El reporte contiene datos inválidos o incompletos",
         issues: zodIssues,
       });
     }
@@ -48,10 +52,14 @@ export async function buildApp() {
   });
 
   await app.register(authRoutes, { prefix: "/api" });
+  await app.register(betterAuthRoutes, { prefix: "/api" });
+  await app.register(userAdminRoutes, { prefix: "/api" });
   await app.register(captchaRoutes, { prefix: "/api" });
   await app.register(reportRoutes, { prefix: "/api" });
   await app.register(analyticsRoutes, { prefix: "/api" });
 
+  // Registro con GUB UY: deprecado momentáneamente. El IdP mock se sigue montando
+  // con AUTH_PROVIDER=mock, pero la web ya no tiene botón que lleve a él.
   if (isMockIdentityProvider) {
     await app.register(mockIdpRoutes, { prefix: "/mock-idp" });
     app.log.warn("IdP mock montado en /mock-idp (AUTH_PROVIDER=mock). No usar en producción.");

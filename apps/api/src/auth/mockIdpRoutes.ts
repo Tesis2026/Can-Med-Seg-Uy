@@ -1,3 +1,9 @@
+/**
+ * Registro con GUB UY: deprecado momentáneamente.
+ *
+ * IdP OIDC simulado de desarrollo (/mock-idp). Sigue montándose con AUTH_PROVIDER=mock, pero la web ya no lo enlaza.
+ * Se mantiene sin cambios de lógica para poder reactivarlo.
+ */
 import { ROLE_LABELS, visibleRoles } from "@canmedseg/shared";
 import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";

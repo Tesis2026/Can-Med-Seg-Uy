@@ -5,12 +5,14 @@ import {
   sessionSchema,
   type Session,
 } from "@canmedseg/shared";
+import { fromNodeHeaders } from "better-auth/node";
 import type { FastifyPluginAsync, FastifyRequest } from "fastify";
 import { z } from "zod";
 
 import { config, isMockIdentityProvider } from "../config";
 import { pool } from "../database/pool";
 import type { AuthContext } from "./authContext";
+import { auth } from "./betterAuth";
 import { clearedSessionCookie, serializeSessionCookie } from "./cookies";
 import { requireAuth } from "./guards";
 import { consumeLoginState, saveLoginState } from "./loginStateRepository";
@@ -18,11 +20,13 @@ import { OidcError, createLoginChallenge, exchangeCodeForIdentity } from "./oidc
 import { createSession, revokeSession } from "./sessionRepository";
 import { DisabledUserError, acceptConsent, upsertUserFromIdentity } from "./userRepository";
 
+/** Registro con GUB UY: deprecado momentáneamente. */
 const loginQuerySchema = z.object({
   /** Ruta relativa de la web a la que volver después del login. */
   returnTo: z.string().optional(),
 });
 
+/** Registro con GUB UY: deprecado momentáneamente. */
 const callbackQuerySchema = z.object({
   code: z.string().min(1).optional(),
   state: z.string().min(1).optional(),
@@ -65,7 +69,12 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
   /** Sesión actual; un visitante recibe `authenticated: false` con sus permisos. */
   app.get("/auth/session", async (request, reply) => reply.send(toSession(request.auth)));
 
-  /** Inicio del authorization code flow: redirige al IdP (mock o GUB UY real). */
+  /**
+   * Registro con GUB UY: deprecado momentáneamente. La ruta sigue activa pero la
+   * web ya no la enlaza; el ingreso es con email + contraseña (better-auth).
+   *
+   * Inicio del authorization code flow: redirige al IdP (mock o GUB UY real).
+   */
   app.get("/auth/login", async (request, reply) => {
     const { returnTo } = loginQuerySchema.parse(request.query);
     const challenge = createLoginChallenge();
@@ -80,7 +89,11 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
     return reply.redirect(challenge.authorizationUrl, 302);
   });
 
-  /** Retorno del IdP: valida state, intercambia el code y abre la sesión. */
+  /**
+   * Registro con GUB UY: deprecado momentáneamente.
+   *
+   * Retorno del IdP: valida state, intercambia el code y abre la sesión.
+   */
   app.get("/auth/callback", async (request, reply) => {
     const query = callbackQuerySchema.parse(request.query);
 
@@ -134,9 +147,23 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
     }
   });
 
+  /** Cierra la sesión de better-auth y, si existe, la legacy de GUB UY. */
   app.post("/auth/logout", async (request, reply) => {
+    const cookies: string[] = [];
+
+    if (request.auth.source === "better-auth") {
+      const response = await auth.api.signOut({
+        headers: fromNodeHeaders(request.headers),
+        asResponse: true,
+      });
+      cookies.push(...response.headers.getSetCookie());
+    }
+
+    // Registro con GUB UY: deprecado momentáneamente.
     if (request.auth.token) await revokeSession(pool, request.auth.token);
-    reply.header("set-cookie", clearedSessionCookie());
+    cookies.push(clearedSessionCookie());
+
+    reply.header("set-cookie", cookies);
     return reply.send(anonymousSession());
   });
 

@@ -1,3 +1,9 @@
+/**
+ * Registro con GUB UY: deprecado momentáneamente.
+ *
+ * Cookie de la sesión legacy del login OIDC. better-auth maneja su propia cookie.
+ * Se mantiene sin cambios de lógica para poder reactivarlo.
+ */
 import { config } from "../config";
 
 /**
