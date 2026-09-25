@@ -51,6 +51,7 @@ export function LoginPage() {
 
   const returnTo = searchParams.get("returnTo") ?? undefined;
   const errorCode = searchParams.get("error");
+  const passwordWasReset = searchParams.get("restablecida") === "1";
   const error = errorCode ? (ERROR_MESSAGES[errorCode] ?? ERROR_MESSAGES.inesperado) : null;
 
   useEffect(() => {
@@ -122,6 +123,11 @@ export function LoginPage() {
               onChange={(event) => setPassword(event.target.value)}
             />
           </Field>
+          <div className={styles.forgotRow}>
+            <Link className={styles.link} to="/olvide-contrasena">
+              ¿Olvidó su contraseña?
+            </Link>
+          </div>
           <button type="submit" className={styles.submitBtn} disabled={offline || submitting}>
             {submitting ? "Ingresando…" : "Ingresar"}
           </button>
@@ -143,6 +149,18 @@ export function LoginPage() {
           </p>
         </div>
         */}
+
+        {passwordWasReset && !submitError ? (
+          <div className={styles.okBox} role="status">
+            <span className={styles.okIcon} aria-hidden="true">
+              ✓
+            </span>
+            <div className={styles.errTxt}>
+              <p className={styles.okTitle}>Su contraseña se actualizó.</p>
+              <p className={styles.okDetail}>Ya puede ingresar con la contraseña nueva.</p>
+            </div>
+          </div>
+        ) : null}
 
         {submitError ? (
           <div className={styles.errBox} role="alert">

@@ -11,9 +11,11 @@ import { HistorialPage } from "./pages/HistorialPage";
 import { InicioPage } from "./pages/InicioPage";
 import { LandingPage } from "./pages/LandingPage";
 import { LoginPage } from "./pages/LoginPage";
+import { OlvideContrasenaPage } from "./pages/OlvideContrasenaPage";
 import { ReporteExitoPage } from "./pages/ReporteExitoPage";
 import { ReporteWizardPage } from "./pages/ReporteWizardPage";
 import { ReportesPeriodicosPage } from "./pages/ReportesPeriodicosPage";
+import { RestablecerContrasenaPage } from "./pages/RestablecerContrasenaPage";
 import { RevisionDetallePage } from "./pages/RevisionDetallePage";
 import { RevisionPage } from "./pages/RevisionPage";
 
@@ -40,6 +42,8 @@ export function App() {
       </Route>
       <Route element={<AppShell />}>
         <Route path="login" element={<LoginPage />} />
+        <Route path="olvide-contrasena" element={<OlvideContrasenaPage />} />
+        <Route path="restablecer-contrasena" element={<RestablecerContrasenaPage />} />
         <Route path="reporte" element={<ReporteWizardPage />} />
         <Route path="reporte/exito" element={<ReporteExitoPage />} />
         {/* RF-4.5 y RF-6: solo con sesión; cada página redirige al login. */}

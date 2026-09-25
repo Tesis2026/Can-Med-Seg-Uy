@@ -18,6 +18,8 @@ export function loginUrl(returnTo?: string): string {
   return apiUrl(`/api/auth/login${search}`);
 }
 
+const TOO_MANY_REQUESTS = "Demasiados intentos seguidos. Espere un minuto y vuelva a intentar.";
+
 export async function signIn(input: SignInInput): Promise<void> {
   try {
     await apiFetch("/api/auth/sign-in/email", {
@@ -28,6 +30,42 @@ export async function signIn(input: SignInInput): Promise<void> {
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) {
       throw new ApiError("Email o contraseña incorrectos.", 401);
+    }
+    if (error instanceof ApiError && error.status === 429) {
+      throw new ApiError(TOO_MANY_REQUESTS, 429);
+    }
+    throw error;
+  }
+}
+
+export async function requestPasswordReset(email: string): Promise<void> {
+  try {
+    await apiFetch("/api/auth/request-password-reset", {
+      method: "POST",
+      body: { email },
+      fallbackMessage: "No se pudo enviar el pedido. Intente nuevamente.",
+    });
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 429) {
+      throw new ApiError(TOO_MANY_REQUESTS, 429);
+    }
+    throw error;
+  }
+}
+
+export async function resetPassword(token: string, newPassword: string): Promise<void> {
+  try {
+    await apiFetch("/api/auth/reset-password", {
+      method: "POST",
+      body: { token, newPassword },
+      fallbackMessage: "No se pudo restablecer la contraseña. Intente nuevamente.",
+    });
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 400) {
+      throw new ApiError("El enlace venció o ya fue usado.", 400, "token_invalido");
+    }
+    if (error instanceof ApiError && error.status === 429) {
+      throw new ApiError(TOO_MANY_REQUESTS, 429);
     }
     throw error;
   }

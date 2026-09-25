@@ -168,3 +168,42 @@
     padding-top: 8px;
   }
 }
+
+.okBox {
+  display: flex;
+  gap: 10px;
+  padding: 12px;
+  background: #f0fdf4;
+  border: 1px solid #166534;
+}
+
+.okIcon {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #166534;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.okTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: #166534;
+}
+
+.okDetail {
+  font-size: 13px;
+  color: #166534;
+}
+
+.forgotRow {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -6px;
+}
