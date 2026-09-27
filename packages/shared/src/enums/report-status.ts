@@ -25,6 +25,20 @@ export const SUBMITTED_REPORT_STATUSES = [
 
 export type SubmittedReportStatus = (typeof SUBMITTED_REPORT_STATUSES)[number];
 
+/**
+ * Estados que se muestran y se asignan. `aprobado_msp`, `enviado_msp` y `rechazado`
+ * siguen en el enum por reversibilidad: los del MSP se migraron a `aprobado_local`
+ * y `rechazado` se asigna al revisar pero no se muestra.
+ */
+export const ACTIVE_REPORT_STATUSES = [
+  ReportStatus.EnProgreso,
+  ReportStatus.EnRevision,
+  ReportStatus.AprobadoLocal,
+] as const;
+
+/** Reportes completos: los únicos que alimentan gráficos, tabla y exportación. */
+export const APPROVED_REPORT_STATUSES = [ReportStatus.AprobadoLocal] as const;
+
 /** Etiquetas de UI (español) — RF-5.5. */
 export const REPORT_STATUS_LABELS: Record<ReportStatus, string> = {
   [ReportStatus.EnProgreso]: "En progreso",
