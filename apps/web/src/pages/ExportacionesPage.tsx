@@ -1,34 +1,18 @@
 import {
   Permission,
-  analyticsFiltersSchema,
   hasPermission,
-  type AnalyticsFilters,
   type ExportFormat,
   type ExportPreview,
 } from "@canmedseg/shared";
 import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useSearchParams } from "react-router-dom";
 
-import { exportUrl, fetchExportPreview, filtersToParams } from "../features/analytics/analyticsApi";
+import { exportUrl, fetchExportPreview, filtersFromParams, filtersToParams } from "../features/analytics/analyticsApi";
 import { useSession } from "../features/auth/SessionContext";
 
 import styles from "../features/analytics/analytics.module.css";
 
 const numberFormat = new Intl.NumberFormat("es-UY");
-
-function filtersFromParams(params: URLSearchParams): AnalyticsFilters {
-  const statuses = params.get("statuses");
-  const serious = params.get("serious");
-  return analyticsFiltersSchema.parse({
-    dateField: params.get("dateField") === "evento" ? "evento" : "notificacion",
-    from: params.get("from") ?? undefined,
-    to: params.get("to") ?? undefined,
-    statuses: statuses ? statuses.split(",").filter(Boolean) : undefined,
-    profession: params.get("profession") ?? undefined,
-    administrationRoute: params.get("administrationRoute") ?? undefined,
-    serious: serious === null ? undefined : serious === "true",
-  });
-}
 
 /** Frame «Exportaciones» del diseño (RF-8.1, RF-8.2). */
 export function ExportacionesPage() {

@@ -1,11 +1,16 @@
 import {
-  ADMINISTRATION_ROUTE_LABELS,
-  PROFESSION_LABELS,
-  REPORT_STATUS_LABELS,
-  ReportStatus,
+  AGE_GROUPS,
+  AGE_GROUP_LABELS,
+  COMPOSITION_BUCKETS,
+  REPORTING_AREA_LABELS,
+  UY_REGIONS,
+  UY_REGION_LABELS,
+  type AnalyticsFilterOptions,
   type AnalyticsFilters,
-  type SubmittedReportStatus,
 } from "@canmedseg/shared";
+import { useEffect, useState } from "react";
+
+import { fetchFilterOptions } from "./analyticsApi";
 
 import styles from "./analytics.module.css";
 
@@ -14,98 +19,135 @@ type FiltrosDashboardProps = {
   onChange: (filters: AnalyticsFilters) => void;
 };
 
-/** Estados que puede elegir el investigador dentro del conjunto aprobado. */
-const ESTADOS: SubmittedReportStatus[] = [
-  ReportStatus.AprobadoLocal,
-  ReportStatus.EnviadoMsp,
+type SelectFilterProps = {
+  label: string;
+  value: string | undefined;
+  allLabel: string;
+  options: readonly { value: string; label: string }[];
+  onChange: (value: string | undefined) => void;
+};
+
+function SelectFilter({ label, value, allLabel, options, onChange }: SelectFilterProps) {
+  const current = value ?? "";
+  const known = current === "" || options.some((option) => option.value === current);
+  return (
+    <label className={styles.filter}>
+      <span className={styles.filterLabel}>{label}</span>
+      <select
+        className={styles.select}
+        value={current}
+        onChange={(event) => onChange(event.target.value || undefined)}
+      >
+        <option value="">{allLabel}</option>
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+        {known ? null : <option value={current}>{current}</option>}
+      </select>
+    </label>
+  );
+}
+
+const AGE_OPTIONS = AGE_GROUPS.map((value) => ({ value, label: AGE_GROUP_LABELS[value] }));
+const REGION_OPTIONS = UY_REGIONS.map((value) => ({ value, label: UY_REGION_LABELS[value] }));
+const COMPOSITION_OPTIONS = COMPOSITION_BUCKETS.map((bucket) => ({
+  value: bucket.key,
+  label: bucket.label,
+}));
+const REPORTING_AREA_OPTIONS = Object.entries(REPORTING_AREA_LABELS).map(([value, label]) => ({
+  value,
+  label,
+}));
+const SERIOUS_OPTIONS = [
+  { value: "true", label: "Solo graves" },
+  { value: "false", label: "Solo no graves" },
 ];
+
+const toOptions = (values: string[]) => values.map((value) => ({ value, label: value }));
 
 /**
  * Filtros globales del dashboard (RF-7.3): se eligen una vez y recalculan todos
  * los gráficos, la tabla y la exportación.
  */
 export function FiltrosDashboard({ filters, onChange }: FiltrosDashboardProps) {
+  const [options, setOptions] = useState<AnalyticsFilterOptions>({ products: [], meddraTerms: [] });
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchFilterOptions()
+      .then((result) => {
+        if (!cancelled) setOptions(result);
+      })
+      .catch((error: unknown) => console.error("No se pudieron cargar las opciones de filtro", error));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   function patch(partial: Partial<AnalyticsFilters>) {
     onChange({ ...filters, ...partial });
   }
 
-  const estadoActual =
-    filters.statuses && filters.statuses.length === 1 ? filters.statuses[0] : "";
-
   return (
     <div className={styles.filterRow}>
-      <label className={styles.filter}>
-        <span className={styles.filterLabel}>Estado</span>
-        <select
-          className={styles.select}
-          value={estadoActual}
-          onChange={(event) =>
-            patch({
-              statuses: event.target.value
-                ? [event.target.value as SubmittedReportStatus]
-                : undefined,
-            })
-          }
-        >
-          <option value="">Todos los aprobados</option>
-          {ESTADOS.map((estado) => (
-            <option key={estado} value={estado}>
-              {REPORT_STATUS_LABELS[estado]}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <label className={styles.filter}>
-        <span className={styles.filterLabel}>Gravedad</span>
-        <select
-          className={styles.select}
-          value={filters.serious === undefined ? "" : String(filters.serious)}
-          onChange={(event) =>
-            patch({
-              serious: event.target.value === "" ? undefined : event.target.value === "true",
-            })
-          }
-        >
-          <option value="">Todas</option>
-          <option value="true">Solo graves</option>
-          <option value="false">Solo no graves</option>
-        </select>
-      </label>
-
-      <label className={styles.filter}>
-        <span className={styles.filterLabel}>Tipo de notificador</span>
-        <select
-          className={styles.select}
-          value={filters.profession ?? ""}
-          onChange={(event) => patch({ profession: event.target.value || undefined })}
-        >
-          <option value="">Todos</option>
-          {Object.entries(PROFESSION_LABELS).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <label className={styles.filter}>
-        <span className={styles.filterLabel}>Vía de administración</span>
-        <select
-          className={styles.select}
-          value={filters.administrationRoute ?? ""}
-          onChange={(event) =>
-            patch({ administrationRoute: event.target.value || undefined })
-          }
-        >
-          <option value="">Todas</option>
-          {Object.entries(ADMINISTRATION_ROUTE_LABELS).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
-      </label>
+      <SelectFilter
+        label="Edad"
+        value={filters.ageGroup}
+        allLabel="Todas"
+        options={AGE_OPTIONS}
+        onChange={(value) => patch({ ageGroup: value as AnalyticsFilters["ageGroup"] })}
+      />
+      <SelectFilter
+        label="Región"
+        value={filters.region}
+        allLabel="Todas"
+        options={REGION_OPTIONS}
+        onChange={(value) => patch({ region: value as AnalyticsFilters["region"] })}
+      />
+      <SelectFilter
+        label="Gravedad"
+        value={filters.serious === undefined ? undefined : String(filters.serious)}
+        allLabel="Todas"
+        options={SERIOUS_OPTIONS}
+        onChange={(value) => patch({ serious: value === undefined ? undefined : value === "true" })}
+      />
+      <SelectFilter
+        label="Producto"
+        value={filters.product}
+        allLabel="Todos"
+        options={toOptions(options.products)}
+        onChange={(value) => patch({ product: value })}
+      />
+      <SelectFilter
+        label="Contenido de THC"
+        value={filters.thc}
+        allLabel="Todos"
+        options={COMPOSITION_OPTIONS}
+        onChange={(value) => patch({ thc: value as AnalyticsFilters["thc"] })}
+      />
+      <SelectFilter
+        label="Contenido de CBD"
+        value={filters.cbd}
+        allLabel="Todos"
+        options={COMPOSITION_OPTIONS}
+        onChange={(value) => patch({ cbd: value as AnalyticsFilters["cbd"] })}
+      />
+      <SelectFilter
+        label="Clasificación MedDRA"
+        value={filters.meddra}
+        allLabel="Todas"
+        options={toOptions(options.meddraTerms)}
+        onChange={(value) => patch({ meddra: value })}
+      />
+      <SelectFilter
+        label="Área reportante"
+        value={filters.reportingArea}
+        allLabel="Todas"
+        options={REPORTING_AREA_OPTIONS}
+        onChange={(value) => patch({ reportingArea: value })}
+      />
 
       <label className={styles.filter}>
         <span className={styles.filterLabel}>La fecha corresponde a</span>

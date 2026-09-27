@@ -1,9 +1,13 @@
 import {
   analyticsDashboardSchema,
+  analyticsFilterOptionsSchema,
+  analyticsFiltersFromQuery,
+  analyticsFiltersToQuery,
   exportPreviewSchema,
   periodicPreferencesSchema,
   reportTablePageSchema,
   type AnalyticsDashboard,
+  type AnalyticsFilterOptions,
   type AnalyticsFilters,
   type ExportFormat,
   type ExportPreview,
@@ -17,21 +21,19 @@ import { apiFetch, apiUrl } from "../../lib/api";
 
 /** Los filtros viajan en la query string, así la vista filtrada es compartible. */
 export function filtersToParams(filters: AnalyticsFilters): URLSearchParams {
-  const params = new URLSearchParams();
-  if (filters.dateField && filters.dateField !== "notificacion") {
-    params.set("dateField", filters.dateField);
-  }
-  if (filters.from) params.set("from", filters.from);
-  if (filters.to) params.set("to", filters.to);
-  if (filters.statuses && filters.statuses.length > 0) {
-    params.set("statuses", filters.statuses.join(","));
-  }
-  if (filters.profession) params.set("profession", filters.profession);
-  if (filters.administrationRoute) {
-    params.set("administrationRoute", filters.administrationRoute);
-  }
-  if (filters.serious !== undefined) params.set("serious", String(filters.serious));
-  return params;
+  return new URLSearchParams(analyticsFiltersToQuery(filters));
+}
+
+export function filtersFromParams(params: URLSearchParams): AnalyticsFilters {
+  return analyticsFiltersFromQuery((key) => params.get(key));
+}
+
+export async function fetchFilterOptions(): Promise<AnalyticsFilterOptions> {
+  return analyticsFilterOptionsSchema.parse(
+    await apiFetch("/api/analytics/filter-options", {
+      fallbackMessage: "No se pudieron cargar las opciones de filtro.",
+    }),
+  );
 }
 
 export async function fetchDashboard(
