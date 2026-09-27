@@ -49,20 +49,19 @@ export function LoginPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const returnTo = searchParams.get("returnTo") ?? undefined;
   const errorCode = searchParams.get("error");
   const passwordWasReset = searchParams.get("restablecida") === "1";
   const error = errorCode ? (ERROR_MESSAGES[errorCode] ?? ERROR_MESSAGES.inesperado) : null;
 
   useEffect(() => {
     if (!loading && session.authenticated) {
-      navigate(returnTo ?? "/", { replace: true });
+      navigate("/", { replace: true });
     }
-  }, [loading, session.authenticated, navigate, returnTo]);
+  }, [loading, session.authenticated, navigate]);
 
   // Registro con GUB UY: deprecado momentáneamente.
   // function handleLogin() {
-  //   window.location.assign(loginUrl(returnTo));
+  //   window.location.assign(loginUrl());
   // }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {

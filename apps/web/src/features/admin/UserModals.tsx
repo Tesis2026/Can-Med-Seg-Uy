@@ -1,7 +1,4 @@
 import {
-  ASSIGNABLE_ROLES,
-  HEALTH_PROFESSION_SUBTYPES,
-  HEALTH_PROFESSION_SUBTYPE_LABELS,
   PASSWORD_MIN_LENGTH,
   ROLE_LABELS,
   Role,
@@ -9,13 +6,12 @@ import {
   setUserPasswordInputSchema,
   type AdminUser,
   type AssignableRole,
-  type HealthProfessionSubtypeValue,
 } from "@canmedseg/shared";
 import { useEffect, useId, useState, type FormEvent, type ReactNode } from "react";
 
 import modalStyles from "../../components/consent/ConsentModal.module.css";
 import styles from "../../pages/GestionUsuarios.module.css";
-import { Field, SelectInput, TextInput } from "../reporte/FormFields";
+import { Field, TextInput } from "../reporte/FormFields";
 import { createUser, deleteUser, setUserPassword } from "./adminUsersApi";
 
 type ModalFrameProps = {
@@ -56,9 +52,9 @@ function errorMessage(cause: unknown, fallback: string): string {
   return cause instanceof Error ? cause.message : fallback;
 }
 
-const SELECTABLE_ROLES = ASSIGNABLE_ROLES.filter((role) => role !== Role.Comun);
+const SELECTABLE_ROLES: readonly AssignableRole[] = [Role.Investigador, Role.Admin];
 
-type CreateErrors = Partial<Record<"displayName" | "email" | "password" | "subtype", string>>;
+type CreateErrors = Partial<Record<"displayName" | "email" | "password", string>>;
 
 export function CreateUserModal({
   onClose,
@@ -70,8 +66,7 @@ export function CreateUserModal({
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [roles, setRoles] = useState<AssignableRole[]>([]);
-  const [subtype, setSubtype] = useState<HealthProfessionSubtypeValue | "">("");
+  const [roles, setRoles] = useState<AssignableRole[]>([Role.Investigador]);
   const [errors, setErrors] = useState<CreateErrors>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -90,18 +85,14 @@ export function CreateUserModal({
       displayName,
       email,
       password,
-      roles: [Role.Comun, ...roles].map((role) => ({
-        role,
-        healthProfessionSubtype: role === Role.ProfesionalSalud && subtype ? subtype : null,
-      })),
+      roles: [Role.Comun, ...roles].map((role) => ({ role, healthProfessionSubtype: null })),
     });
 
     if (!parsed.success) {
       const next: CreateErrors = {};
       for (const issue of parsed.error.issues) {
-        const [field] = issue.path;
-        const key = field === "roles" ? "subtype" : field;
-        if ((key === "displayName" || key === "email" || key === "password" || key === "subtype") && !next[key]) {
+        const [key] = issue.path;
+        if ((key === "displayName" || key === "email" || key === "password") && !next[key]) {
           next[key] = issue.message;
         }
       }
@@ -162,10 +153,6 @@ export function CreateUserModal({
 
             <fieldset className={styles.fieldset}>
               <legend className={styles.legend}>Roles</legend>
-              <label className={`${styles.check} ${styles.checkDisabled}`}>
-                <input type="checkbox" checked disabled />
-                {ROLE_LABELS[Role.Comun]} (siempre incluido)
-              </label>
               {SELECTABLE_ROLES.map((role) => (
                 <label key={role} className={styles.check}>
                   <input
@@ -176,31 +163,6 @@ export function CreateUserModal({
                   {ROLE_LABELS[role]}
                 </label>
               ))}
-              {roles.includes(Role.ProfesionalSalud) ? (
-                <div className={styles.subtype}>
-                  <Field
-                    label="Tipo de profesional"
-                    htmlFor="new-user-subtype"
-                    required
-                    error={errors.subtype}
-                  >
-                    <SelectInput
-                      id="new-user-subtype"
-                      value={subtype}
-                      hasError={Boolean(errors.subtype)}
-                      onChange={(event) =>
-                        setSubtype(event.target.value as HealthProfessionSubtypeValue | "")
-                      }
-                    >
-                      {HEALTH_PROFESSION_SUBTYPES.map((value) => (
-                        <option key={value} value={value}>
-                          {HEALTH_PROFESSION_SUBTYPE_LABELS[value]}
-                        </option>
-                      ))}
-                    </SelectInput>
-                  </Field>
-                </div>
-              ) : null}
             </fieldset>
 
             {submitError ? (
