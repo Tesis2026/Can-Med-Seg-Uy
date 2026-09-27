@@ -98,15 +98,10 @@ export function RevisionPage() {
         >
           En revisión ({queue?.length ?? "…"})
         </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === "msp"}
-          className={`${revisionStyles.tab} ${tab === "msp" ? revisionStyles.tabActive : ""}`}
-          onClick={() => setTab("msp")}
-        >
+        {/* Envío al MSP: desactivado momentáneamente. Pestaña anterior:
+        <button type="button" role="tab" aria-selected={tab === "msp"} onClick={() => setTab("msp")}>
           Envíos MSP pendientes ({mspPending?.length ?? "…"})
-        </button>
+        </button> */}
       </div>
 
       {error ? (

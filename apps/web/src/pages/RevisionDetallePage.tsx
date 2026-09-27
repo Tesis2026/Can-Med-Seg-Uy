@@ -224,14 +224,8 @@ export function RevisionDetallePage() {
               >
                 Aprobado para análisis local
               </button>
-              <button
-                type="button"
-                className={revisionStyles.btnSecondary}
-                disabled={busy || !causality}
-                onClick={() => void handleClassify("enviar_msp")}
-              >
-                Aprobado con envío al MSP
-              </button>
+              {/* Envío al MSP: desactivado momentáneamente. Botón anterior:
+              <button onClick={() => void handleClassify("enviar_msp")}>Aprobado con envío al MSP</button> */}
               <button
                 type="button"
                 className={revisionStyles.btnDanger}

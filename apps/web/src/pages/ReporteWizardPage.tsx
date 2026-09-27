@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { ReportStatus } from "@canmedseg/shared";
+import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import { Permission, ReportStatus, hasPermission } from "@canmedseg/shared";
 
 import {
   ConsentFinalModal,
@@ -33,12 +33,16 @@ function formatSavedAt(date: Date): string {
 }
 
 export function ReporteWizardPage() {
-  const { user, loading } = useSession();
+  const { session, user, loading } = useSession();
 
   // Hasta saber quién es, no se carga nada: el borrador guardado en la pestaña
   // puede ser de otra persona. La clave remonta el asistente al cambiar de
   // usuario, para que el formulario nunca se herede entre sesiones.
   if (loading) return <p className={styles.loading}>Cargando…</p>;
+  // Reporte anónimo: desactivado momentáneamente; hace falta sesión para reportar.
+  if (!hasPermission(session.permissions, Permission.ReportSubmit)) {
+    return <Navigate to="/login" replace />;
+  }
 
   const ownerId = user?.id ?? null;
   return <ReporteWizard key={ownerId ?? "visitante"} ownerId={ownerId} />;
