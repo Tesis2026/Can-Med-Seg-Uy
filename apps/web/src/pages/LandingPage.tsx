@@ -1,3 +1,4 @@
+import { Permission, hasPermission } from "@canmedseg/shared";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -6,6 +7,7 @@ import {
   setConsentInicioAccepted,
 } from "../components/consent";
 import { Button } from "../components/ui/Button";
+import { useSession } from "../features/auth/SessionContext";
 
 import styles from "./LandingPage.module.css";
 
@@ -18,6 +20,9 @@ const FOOTER_LINKS = [
 
 export function LandingPage() {
   const navigate = useNavigate();
+  const { session } = useSession();
+  // Reporte anónimo: desactivado momentáneamente (el visitante no tiene `ReportSubmit`).
+  const puedeReportar = hasPermission(session.permissions, Permission.ReportSubmit);
 
   const [consentOpen, setConsentOpen] = useState(false);
 
@@ -52,9 +57,11 @@ export function LandingPage() {
           a la seguridad y monitoreo de estos tratamientos en Uruguay.
         </p>
         <div className={styles.btnRow}>
-          <Button variant="primary" type="button" onClick={handleReportClick}>
-            Reportar evento adverso
-          </Button>
+          {puedeReportar ? (
+            <Button variant="primary" type="button" onClick={handleReportClick}>
+              Reportar evento adverso
+            </Button>
+          ) : null}
           {/* Registro con GUB UY: deprecado momentáneamente. Texto anterior: «Iniciar sesión con GUB UY». */}
           <Button variant="secondary" to="/login">
             Iniciar sesión

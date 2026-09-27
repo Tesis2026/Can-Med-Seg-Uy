@@ -489,7 +489,9 @@ export type ReviewCorrectionInput = z.infer<typeof reviewCorrectionInputSchema>;
 
 /** Clasificar un reporte: relación causal obligatoria (RF-5 / notas cliente). */
 export const classifyReportInputSchema = reviewCorrectionInputSchema.extend({
-  decision: reportClassificationDecisionSchema,
+  decision: reportClassificationDecisionSchema.refine((decision): boolean => decision !== "enviar_msp", {
+    message: "El envío al MSP está desactivado",
+  }),
   causality: causalitySchema,
 });
 

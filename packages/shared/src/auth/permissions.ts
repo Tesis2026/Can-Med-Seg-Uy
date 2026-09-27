@@ -1,4 +1,4 @@
-import { Role } from "../enums/role";
+import { Role, isActiveRole } from "../enums/role";
 
 /**
  * Permisos derivados de la matriz de documentacion/diagramas.md §4.2.
@@ -65,10 +65,13 @@ export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
   ],
 };
 
-/** Los permisos de un usuario son la unión de los permisos de todos sus roles. */
+/**
+ * Los permisos de un usuario son la unión de los permisos de sus roles habilitados.
+ * Los roles desactivados (anónimo incluido) no otorgan nada: sin sesión no se reporta.
+ */
 export function permissionsForRoles(roles: readonly Role[]): Permission[] {
   const granted = new Set<Permission>();
-  for (const role of roles) {
+  for (const role of roles.filter(isActiveRole)) {
     for (const permission of ROLE_PERMISSIONS[role] ?? []) granted.add(permission);
   }
   return PERMISSIONS.filter((permission) => granted.has(permission));

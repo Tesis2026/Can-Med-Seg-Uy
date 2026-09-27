@@ -206,7 +206,6 @@ function ResumenOperativo() {
   if (failed || !summary) return null;
 
   const valor = (n: number) => numberFormat.format(n);
-  const hayPendientes = summary.envioMspPendiente > 0;
 
   return (
     <section className={styles.statsCard}>
@@ -218,14 +217,9 @@ function ResumenOperativo() {
         </div>
         <div className={styles.statTile}>
           <p className={styles.statValue}>{valor(summary.aprobados)}</p>
-          <p className={styles.statLabel}>Aprobados local / MSP</p>
+          <p className={styles.statLabel}>Aprobados</p>
         </div>
-        <div className={`${styles.statTile} ${hayPendientes ? styles.statTileAlerta : ""}`}>
-          <p className={`${styles.statValue} ${hayPendientes ? styles.statValueAlerta : ""}`}>
-            {valor(summary.envioMspPendiente)}
-          </p>
-          <p className={styles.statLabel}>Envíos MSP pendientes</p>
-        </div>
+        {/* Envío al MSP: desactivado momentáneamente (tarjeta «Envíos MSP pendientes»). */}
       </div>
     </section>
   );

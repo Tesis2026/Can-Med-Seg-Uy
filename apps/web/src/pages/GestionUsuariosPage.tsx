@@ -4,6 +4,7 @@ import {
   ROLE_LABELS,
   Role,
   hasPermission,
+  isActiveRole,
   type AdminUser,
   type UserRole,
 } from "@canmedseg/shared";
@@ -170,7 +171,7 @@ export function GestionUsuariosPage() {
 
           {filtered.map((entry) => {
             const isSelf = entry.id === currentUser?.id;
-            const roles = entry.roles.filter((role) => role.role !== Role.Comun);
+            const roles = entry.roles.filter((role) => isActiveRole(role.role));
             return (
               <div
                 className={`${styles.row} ${entry.active ? "" : ownStyles.inactiveRow}`}
@@ -189,7 +190,7 @@ export function GestionUsuariosPage() {
                 </div>
                 <div className={ownStyles.colRoles}>
                   {roles.length === 0 ? (
-                    <span className={ownStyles.roleTag}>{ROLE_LABELS[Role.Comun]}</span>
+                    <span className={ownStyles.roleTag}>Sin rol activo</span>
                   ) : (
                     roles.map((role) => (
                       <span className={ownStyles.roleTag} key={role.role}>

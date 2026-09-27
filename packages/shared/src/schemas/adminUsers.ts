@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { Role } from "../enums/role";
+import { Role, isActiveRole } from "../enums/role";
 import { userRoleSchema } from "./auth";
 
 export const PASSWORD_MIN_LENGTH = 8;
@@ -48,6 +48,13 @@ export const createUserInputSchema = z
         });
       }
       seen.add(entry.role);
+      if (entry.role !== Role.Comun && !isActiveRole(entry.role)) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["roles", index],
+          message: "Rol no disponible",
+        });
+      }
       if (entry.role === Role.ProfesionalSalud && entry.healthProfessionSubtype === null) {
         context.addIssue({
           code: z.ZodIssueCode.custom,

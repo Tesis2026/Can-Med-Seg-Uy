@@ -3,8 +3,8 @@ import {
   AGE_GROUP_LABELS,
   AgeGroup,
   COMPOSITION_BUCKETS,
+  APPROVED_REPORT_STATUSES,
   REPORTING_AREA_LABELS,
-  ReportStatus,
   UY_DEPARTMENTS,
   UY_REGION_LABELS,
   compositionBucketLabel,
@@ -22,7 +22,7 @@ import {
  */
 
 /** Estados que entran en cualquier agregación o exportación. */
-export const BASE_STATUSES = [ReportStatus.AprobadoLocal, ReportStatus.EnviadoMsp];
+export const BASE_STATUSES = APPROVED_REPORT_STATUSES;
 
 /** Las fechas de evento se guardan como texto `dd/mm/aaaa`. */
 const EVENT_DATE = `CASE WHEN e.start_date ~ '^[0-9]{2}/[0-9]{2}/[0-9]{4}$'

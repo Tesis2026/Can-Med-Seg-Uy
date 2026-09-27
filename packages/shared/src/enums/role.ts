@@ -38,14 +38,21 @@ export const ROLE_LABELS: Record<Role, string> = {
   [Role.Admin]: "Administrador",
 };
 
+/**
+ * Roles habilitados. Los demás siguen definidos para no perder datos ni tener que
+ * rehacerlos si vuelven, pero no otorgan permisos ni aparecen en la interfaz.
+ */
+export const ACTIVE_ROLES: readonly Role[] = [Role.Investigador, Role.Admin];
+
+export function isActiveRole(role: Role): boolean {
+  return ACTIVE_ROLES.includes(role);
+}
+
 export function isAssignableRole(value: unknown): value is AssignableRole {
   return typeof value === "string" && (ASSIGNABLE_ROLES as readonly string[]).includes(value);
 }
 
-/**
- * Roles que se muestran en la interfaz. `comun` y `anonimo` quedan fuera: son la
- * base que tiene cualquiera y nombrarlos no le dice nada al usuario.
- */
+/** Roles que se muestran en la interfaz: solo los habilitados. */
 export function visibleRoles(roles: readonly Role[]): Role[] {
-  return roles.filter((role) => role !== Role.Comun && role !== Role.Anonimo);
+  return roles.filter(isActiveRole);
 }
