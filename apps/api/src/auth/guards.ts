@@ -1,10 +1,7 @@
 import { hasPermission, type PermissionValue } from "@canmedseg/shared";
 import type { FastifyReply, FastifyRequest, preHandlerHookHandler } from "fastify";
 
-/**
- * Guards de la API. El envío de reportes queda deliberadamente sin guard:
- * un visitante anónimo debe poder notificar (RF-1.2 / RF-3).
- */
+/** Guards de la API. El reporte anónimo está desactivado: enviar exige sesión. */
 
 function unauthorized(reply: FastifyReply): FastifyReply {
   return reply.code(401).send({ message: "Debe iniciar sesión para continuar." });

@@ -54,7 +54,8 @@ export const reportRoutes: FastifyPluginAsync = async (app) => {
    * poder notificar (RF-1.2 / RF-3), pero solo si resolvió el CAPTCHA (RF-3.6).
    * Si hay sesión, el reporte queda asociado a ella.
    */
-  app.post("/reports", async (request, reply) => {
+  // Sin sesión no se reporta: el rol anónimo no otorga `ReportSubmit`.
+  app.post("/reports", { preHandler: requirePermission(Permission.ReportSubmit) }, async (request, reply) => {
     const { report, draftId, captchaToken } = submitReportRequestSchema.parse(request.body);
     const user = request.auth.user;
 

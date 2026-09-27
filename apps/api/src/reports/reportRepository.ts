@@ -298,7 +298,8 @@ export async function getReport(
        FROM reports
       WHERE id = $1
         AND status <> 'en_progreso'
-        AND ($2::boolean OR ($3::uuid IS NOT NULL AND notifier_user_id = $3::uuid))`,
+        AND ($2::boolean OR ($3::uuid IS NOT NULL AND notifier_user_id = $3::uuid
+                             AND status <> 'rechazado'))`,
     [id, viewer.canReview, viewer.userId],
   );
   const row = result.rows[0];
@@ -451,7 +452,7 @@ export async function listOwnReports(pool: Pool, userId: string): Promise<Report
     `SELECT id, status, submitted_at, patient_initials, patient_national_id,
             adverse_event_description
        FROM reports
-      WHERE notifier_user_id = $1 AND status <> 'en_progreso'
+      WHERE notifier_user_id = $1 AND status NOT IN ('en_progreso', 'rechazado')
       ORDER BY submitted_at DESC`,
     [userId],
   );
@@ -470,7 +471,7 @@ export async function getNotifierStats(pool: Pool, userId: string): Promise<Noti
     `SELECT count(*) FILTER (WHERE notifier_user_id = $1) AS own,
             count(*) AS total
        FROM reports
-      WHERE status <> 'en_progreso'`,
+      WHERE status NOT IN ('en_progreso', 'rechazado')`,
     [userId],
   );
   const row = result.rows[0];
@@ -488,7 +489,7 @@ export async function getReviewSummary(pool: Pool): Promise<ReviewSummary> {
     envio_msp_pendiente: string;
   }>(
     `SELECT count(*) FILTER (WHERE status = 'en_revision') AS en_revision,
-            count(*) FILTER (WHERE status IN ('aprobado_local', 'enviado_msp')) AS aprobados,
+            count(*) FILTER (WHERE status = 'aprobado_local') AS aprobados,
             count(*) FILTER (WHERE status = 'aprobado_msp') AS envio_msp_pendiente
        FROM reports`,
   );
