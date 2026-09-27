@@ -1,14 +1,13 @@
 import {
   Permission,
-  REPORT_STATUS_LABELS,
   analyticsDashboardSchema,
-  analyticsFiltersSchema,
+  analyticsFilterOptionsSchema,
+  analyticsFiltersFromQuery,
   exportFormatSchema,
   periodicPreferencesSchema,
   reportTablePageSchema,
   reportTableQuerySchema,
   savePeriodicPreferencesSchema,
-  type SubmittedReportStatus,
 } from "@canmedseg/shared";
 import type { FastifyPluginAsync, FastifyRequest } from "fastify";
 import { z } from "zod";
@@ -27,11 +26,7 @@ import {
   savePreferences,
 } from "../periodic/periodicRepository";
 import { describeFilters } from "./analyticsFilters";
-import {
-  getDashboard,
-  professionLabel,
-  routeLabel,
-} from "./analyticsRepository";
+import { getDashboard, getFilterOptions } from "./analyticsRepository";
 import { getReportTable } from "./reportTableRepository";
 
 /**
@@ -39,68 +34,35 @@ import { getReportTable } from "./reportTableRepository";
  * Todo el módulo exige permisos de investigador o MSP (RF-7.16 / RF-8.15).
  */
 
+function queryGetter(query: unknown): (key: string) => string | undefined {
+  const record = (query ?? {}) as Record<string, unknown>;
+  return (key) => (typeof record[key] === "string" ? (record[key] as string) : undefined);
+}
+
 /** Los filtros viajan en la query string para que la vista sea compartible (RF-7.12). */
-const booleanish = z
-  .enum(["true", "false"])
-  .transform((value) => value === "true")
-  .optional();
+function filtersFromRequest(request: FastifyRequest) {
+  return analyticsFiltersFromQuery(queryGetter(request.query));
+}
 
-const filtersQuerySchema = z
-  .object({
-    dateField: z.enum(["notificacion", "evento"]).optional(),
-    from: z.string().optional(),
-    to: z.string().optional(),
-    statuses: z.string().optional(),
-    profession: z.string().optional(),
-    administrationRoute: z.string().optional(),
-    serious: booleanish,
-  })
-  .transform((query) =>
-    analyticsFiltersSchema.parse({
-      dateField: query.dateField ?? "notificacion",
-      from: query.from || undefined,
-      to: query.to || undefined,
-      statuses: query.statuses ? query.statuses.split(",").filter(Boolean) : undefined,
-      profession: query.profession || undefined,
-      administrationRoute: query.administrationRoute || undefined,
-      serious: query.serious,
-    }),
-  );
+const tablePagingSchema = z.object({
+  search: z.string().optional(),
+  sort: z.string().optional(),
+  direction: z.enum(["asc", "desc"]).optional(),
+  page: z.coerce.number().int().min(1).optional(),
+  pageSize: z.coerce.number().int().min(1).max(200).optional(),
+});
 
-const tableQuerySchema = z
-  .object({
-    dateField: z.enum(["notificacion", "evento"]).optional(),
-    from: z.string().optional(),
-    to: z.string().optional(),
-    statuses: z.string().optional(),
-    profession: z.string().optional(),
-    administrationRoute: z.string().optional(),
-    serious: booleanish,
-    search: z.string().optional(),
-    sort: z.string().optional(),
-    direction: z.enum(["asc", "desc"]).optional(),
-    page: z.coerce.number().int().min(1).optional(),
-    pageSize: z.coerce.number().int().min(1).max(200).optional(),
-  })
-  .transform((query) =>
-    reportTableQuerySchema.parse({
-      dateField: query.dateField ?? "notificacion",
-      from: query.from || undefined,
-      to: query.to || undefined,
-      statuses: query.statuses ? query.statuses.split(",").filter(Boolean) : undefined,
-      profession: query.profession || undefined,
-      administrationRoute: query.administrationRoute || undefined,
-      serious: query.serious,
-      search: query.search || undefined,
-      sort: query.sort ?? "submittedAt",
-      direction: query.direction ?? "desc",
-      page: query.page ?? 1,
-      pageSize: query.pageSize ?? 25,
-    }),
-  );
-
-const statusLabel = (value: string) =>
-  REPORT_STATUS_LABELS[value as SubmittedReportStatus] ?? value;
+function tableQueryFromRequest(request: FastifyRequest) {
+  const paging = tablePagingSchema.parse(request.query);
+  return reportTableQuerySchema.parse({
+    ...filtersFromRequest(request),
+    search: paging.search || undefined,
+    sort: paging.sort ?? "submittedAt",
+    direction: paging.direction ?? "desc",
+    page: paging.page ?? 1,
+    pageSize: paging.pageSize ?? 25,
+  });
+}
 
 function sessionUserId(request: FastifyRequest): string {
   const userId = request.auth.user?.id;
@@ -114,10 +76,18 @@ export const analyticsRoutes: FastifyPluginAsync = async (app) => {
     "/analytics/dashboard",
     { preHandler: requirePermission(Permission.DashboardRead) },
     async (request, reply) => {
-      const filters = filtersQuerySchema.parse(request.query);
+      const filters = filtersFromRequest(request);
       const dashboard = await getDashboard(pool, filters);
       return reply.send(analyticsDashboardSchema.parse(dashboard));
     },
+  );
+
+  /** Opciones de los filtros de producto y MedDRA, según los reportes aprobados. */
+  app.get(
+    "/analytics/filter-options",
+    { preHandler: requirePermission(Permission.DashboardRead) },
+    async (_request, reply) =>
+      reply.send(analyticsFilterOptionsSchema.parse(await getFilterOptions(pool))),
   );
 
   /** Tabla de reportes con orden, búsqueda y paginación (RF-7.4, RF-7.14). */
@@ -125,7 +95,7 @@ export const analyticsRoutes: FastifyPluginAsync = async (app) => {
     "/analytics/reports",
     { preHandler: requirePermission(Permission.DashboardRead) },
     async (request, reply) => {
-      const query = tableQuerySchema.parse(request.query);
+      const query = tableQueryFromRequest(request);
       const page = await getReportTable(pool, query);
       return reply.send(reportTablePageSchema.parse(page));
     },
@@ -136,7 +106,7 @@ export const analyticsRoutes: FastifyPluginAsync = async (app) => {
     "/analytics/export/preview",
     { preHandler: requirePermission(Permission.ExportRead) },
     async (request, reply) => {
-      const filters = filtersQuerySchema.parse(request.query);
+      const filters = filtersFromRequest(request);
       const page = await getReportTable(pool, {
         ...filters,
         sort: "submittedAt",
@@ -146,11 +116,7 @@ export const analyticsRoutes: FastifyPluginAsync = async (app) => {
       });
       return reply.send({
         total: page.total,
-        filtersSummary: describeFilters(filters, {
-          profession: professionLabel,
-          route: routeLabel,
-          status: statusLabel,
-        }),
+        filtersSummary: describeFilters(filters),
       });
     },
   );
@@ -160,16 +126,12 @@ export const analyticsRoutes: FastifyPluginAsync = async (app) => {
     "/analytics/export",
     { preHandler: requirePermission(Permission.ExportRead) },
     async (request, reply) => {
-      const filters = filtersQuerySchema.parse(request.query);
+      const filters = filtersFromRequest(request);
       const format = exportFormatSchema.parse(
         (request.query as { format?: string }).format ?? "xlsx",
       );
 
-      const summary = describeFilters(filters, {
-        profession: professionLabel,
-        route: routeLabel,
-        status: statusLabel,
-      });
+      const summary = describeFilters(filters);
       const bundle = await buildExportBundle(pool, filters, summary);
 
       await logExport(pool, {

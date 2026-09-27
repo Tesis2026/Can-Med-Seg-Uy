@@ -171,11 +171,26 @@ export {
 } from "./enums/analytics-chart";
 
 export {
+  ADULT_AGE,
+  AgeGroup,
+  AGE_GROUPS,
+  AGE_GROUP_LABELS,
+  COMPOSITION_BUCKETS,
+  COMPOSITION_BUCKET_KEYS,
+  compositionBucketLabel,
+  type AgeGroup as AgeGroupValue,
+  type CompositionBucket,
+} from "./enums/analytics-filters";
+
+export {
   analyticsChartSchema,
   analyticsUnitSchema,
   periodicFrequencySchema,
   dateFieldSchema,
   analyticsFiltersSchema,
+  analyticsFiltersFromQuery,
+  analyticsFiltersToQuery,
+  analyticsFilterOptionsSchema,
   analyticsSliceSchema,
   analyticsSeriesSchema,
   analyticsHeadlineSchema,
@@ -190,6 +205,7 @@ export {
   savePeriodicPreferencesSchema,
   type DateField,
   type AnalyticsFilters,
+  type AnalyticsFilterOptions,
   type AnalyticsSlice,
   type AnalyticsSeries,
   type AnalyticsHeadline,

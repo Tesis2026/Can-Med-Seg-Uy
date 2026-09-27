@@ -3,6 +3,7 @@ import {
   ANALYTICS_CHART_LABELS,
   ANALYTICS_CHART_UNITS,
   AnalyticsChart,
+  COMPOSITION_BUCKETS,
   PRESENTATION_LABELS,
   PROFESSION_LABELS,
   SEX_LABELS,
@@ -14,13 +15,14 @@ import {
   labelFor,
   regionOfDepartment,
   type AnalyticsDashboard,
+  type AnalyticsFilterOptions,
   type AnalyticsFilters,
   type AnalyticsSeries,
   type AnalyticsSlice,
 } from "@canmedseg/shared";
 import type { Pool } from "pg";
 
-import { buildReportFilter } from "./analyticsFilters";
+import { BASE_STATUSES, buildReportFilter } from "./analyticsFilters";
 
 type CountRow = { key: string | null; total: string };
 
@@ -48,14 +50,6 @@ const AGE_BUCKETS = [
   { key: "65_mas", label: "65 años o más", min: 65, max: 200 },
 ];
 
-/** Tramos de composición declarada, en porcentaje (RF-7.9). */
-const COMPOSITION_BUCKETS = [
-  { key: "0_5", label: "0 a 5 %", min: 0, max: 5 },
-  { key: "5_10", label: "5 a 10 %", min: 5, max: 10 },
-  { key: "10_20", label: "10 a 20 %", min: 10, max: 20 },
-  { key: "20_50", label: "20 a 50 %", min: 20, max: 50 },
-  { key: "50_100", label: "50 a 100 %", min: 50, max: 100 },
-];
 
 function percentage(value: number, total: number): number {
   if (total === 0) return 0;
@@ -70,7 +64,7 @@ function percentage(value: number, total: number): number {
 function toSeries(
   chart: AnalyticsChart,
   rows: CountRow[],
-  order: { key: string; label: string }[],
+  order: readonly { key: string; label: string }[],
   options: { excluded?: number } = {},
 ): AnalyticsSeries {
   const counts = new Map<string, number>();
@@ -162,7 +156,7 @@ async function countChildrenBy(
 
 function bucketExpression(
   column: string,
-  buckets: { key: string; min: number; max: number }[],
+  buckets: readonly { key: string; min: number; max: number }[],
 ): string {
   const cases = buckets
     .map(
@@ -320,10 +314,30 @@ export async function getDashboard(
   };
 }
 
-export function professionLabel(value: string): string {
-  return labelFor(PROFESSION_LABELS, value);
-}
-
-export function routeLabel(value: string): string {
-  return labelFor(ADMINISTRATION_ROUTE_LABELS, value);
+export async function getFilterOptions(pool: Pool): Promise<AnalyticsFilterOptions> {
+  const statuses = [...BASE_STATUSES];
+  const [products, meddraTerms] = await Promise.all([
+    pool.query<{ value: string }>(
+      `SELECT min(btrim(m.name)) AS value
+         FROM report_medicines m
+         JOIN reports r ON r.id = m.report_id
+        WHERE r.status = ANY($1::report_status[]) AND btrim(coalesce(m.name, '')) <> ''
+        GROUP BY lower(btrim(m.name))
+        ORDER BY 1`,
+      [statuses],
+    ),
+    pool.query<{ value: string }>(
+      `SELECT min(btrim(e.meddra_term)) AS value
+         FROM report_adverse_events e
+         JOIN reports r ON r.id = e.report_id
+        WHERE r.status = ANY($1::report_status[]) AND btrim(coalesce(e.meddra_term, '')) <> ''
+        GROUP BY lower(btrim(e.meddra_term))
+        ORDER BY 1`,
+      [statuses],
+    ),
+  ]);
+  return {
+    products: products.rows.map((row) => row.value),
+    meddraTerms: meddraTerms.rows.map((row) => row.value),
+  };
 }

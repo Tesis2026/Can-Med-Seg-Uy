@@ -2,7 +2,6 @@ import {
   Permission,
   REPORT_STATUS_LABELS,
   ReportStatus,
-  analyticsFiltersSchema,
   hasPermission,
   type AnalyticsDashboard,
   type AnalyticsFilters,
@@ -15,7 +14,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useSearchParams } from "react-router-dom";
 
 import { useSession } from "../features/auth/SessionContext";
-import { fetchDashboard, fetchReportTable, filtersToParams } from "../features/analytics/analyticsApi";
+import { fetchDashboard, fetchReportTable, filtersFromParams, filtersToParams } from "../features/analytics/analyticsApi";
 import { ChartCard } from "../features/analytics/charts/ChartCard";
 import { FiltrosDashboard } from "../features/analytics/FiltrosDashboard";
 
@@ -44,21 +43,6 @@ function formatDate(value: string): string {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
-  });
-}
-
-/** Lee los filtros de la URL, para que una vista filtrada se pueda compartir. */
-function filtersFromParams(params: URLSearchParams): AnalyticsFilters {
-  const statuses = params.get("statuses");
-  const serious = params.get("serious");
-  return analyticsFiltersSchema.parse({
-    dateField: params.get("dateField") === "evento" ? "evento" : "notificacion",
-    from: params.get("from") ?? undefined,
-    to: params.get("to") ?? undefined,
-    statuses: statuses ? statuses.split(",").filter(Boolean) : undefined,
-    profession: params.get("profession") ?? undefined,
-    administrationRoute: params.get("administrationRoute") ?? undefined,
-    serious: serious === null ? undefined : serious === "true",
   });
 }
 

@@ -8,8 +8,15 @@ import {
   type AnalyticsUnit as AnalyticsUnitType,
   type PeriodicFrequency as PeriodicFrequencyType,
 } from "../enums/analytics-chart";
+import {
+  AGE_GROUPS,
+  COMPOSITION_BUCKET_KEYS,
+  type AgeGroup as AgeGroupType,
+  type CompositionBucket as CompositionBucketType,
+} from "../enums/analytics-filters";
 import { SUBMITTED_REPORT_STATUSES } from "../enums/report-status";
 import type { SubmittedReportStatus as SubmittedReportStatusType } from "../enums/report-status";
+import { UY_REGIONS, type UyRegion as UyRegionType } from "../enums/uy-department";
 
 /**
  * Dashboard del investigador (RF-7) y exportaciones (RF-8).
@@ -48,20 +55,74 @@ export const dateFieldSchema = z.enum(["notificacion", "evento"]);
 
 export type DateField = z.infer<typeof dateFieldSchema>;
 
+const compositionBucketSchema = z.enum(
+  COMPOSITION_BUCKET_KEYS as unknown as [CompositionBucketType, ...CompositionBucketType[]],
+);
+
 /** Filtros globales del dashboard (RF-7.3). Todos son opcionales. */
 export const analyticsFiltersSchema = z.object({
   dateField: dateFieldSchema.default("notificacion"),
   from: isoDate.optional(),
   to: isoDate.optional(),
-  /** Subconjunto de estados dentro del conjunto base aprobado (RF-7.5). */
-  statuses: z.array(submittedStatus).optional(),
-  profession: z.string().optional(),
-  administrationRoute: z.string().optional(),
+  ageGroup: z.enum(AGE_GROUPS as unknown as [AgeGroupType, ...AgeGroupType[]]).optional(),
+  region: z.enum(UY_REGIONS as unknown as [UyRegionType, ...UyRegionType[]]).optional(),
   /** `true` limita a eventos graves, `false` a no graves (RF-7.3). */
   serious: z.boolean().optional(),
+  product: z.string().trim().min(1).optional(),
+  thc: compositionBucketSchema.optional(),
+  cbd: compositionBucketSchema.optional(),
+  meddra: z.string().trim().min(1).optional(),
+  reportingArea: z.string().trim().min(1).optional(),
 });
 
 export type AnalyticsFilters = z.infer<typeof analyticsFiltersSchema>;
+
+const TEXT_FILTERS = ["from", "to", "ageGroup", "region", "product", "thc", "cbd", "meddra", "reportingArea"] as const;
+
+/**
+ * Lee los filtros desde la query string (web y API usan la misma función, así
+ * una URL compartida da siempre el mismo resultado). Valores inválidos o de
+ * filtros que ya no existen se ignoran.
+ */
+export function analyticsFiltersFromQuery(
+  get: (key: string) => string | null | undefined,
+): AnalyticsFilters {
+  const raw: Record<string, unknown> = {
+    dateField: get("dateField") === "evento" ? "evento" : "notificacion",
+  };
+  for (const key of TEXT_FILTERS) {
+    const value = get(key)?.trim();
+    if (value) raw[key] = value;
+  }
+  const serious = get("serious");
+  if (serious === "true" || serious === "false") raw.serious = serious === "true";
+
+  const parsed = analyticsFiltersSchema.safeParse(raw);
+  if (parsed.success) return parsed.data;
+
+  const invalid = new Set(parsed.error.issues.map((issue) => String(issue.path[0])));
+  for (const key of invalid) delete raw[key];
+  return analyticsFiltersSchema.parse(raw);
+}
+
+export function analyticsFiltersToQuery(filters: AnalyticsFilters): Record<string, string> {
+  const query: Record<string, string> = {};
+  if (filters.dateField === "evento") query.dateField = "evento";
+  for (const key of TEXT_FILTERS) {
+    const value = filters[key];
+    if (value) query[key] = value;
+  }
+  if (filters.serious !== undefined) query.serious = String(filters.serious);
+  return query;
+}
+
+/** Valores posibles de los filtros de texto libre, tomados de los reportes aprobados. */
+export const analyticsFilterOptionsSchema = z.object({
+  products: z.array(z.string()),
+  meddraTerms: z.array(z.string()),
+});
+
+export type AnalyticsFilterOptions = z.infer<typeof analyticsFilterOptionsSchema>;
 
 /** Una categoría dentro de un gráfico. */
 export const analyticsSliceSchema = z.object({
