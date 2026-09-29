@@ -6,13 +6,20 @@ import {
   hasPermission,
   isActiveRole,
   type AdminUser,
+  type PendingInvitation,
   type UserRole,
 } from "@canmedseg/shared";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
 
-import { CreateUserModal, DeleteUserModal, PasswordModal } from "../features/admin/UserModals";
-import { listUsers, setUserActive } from "../features/admin/adminUsersApi";
+import { DeleteUserModal, InviteResearcherModal, PasswordModal } from "../features/admin/UserModals";
+import {
+  cancelInvitation,
+  listInvitations,
+  listUsers,
+  resendInvitation,
+  setUserActive,
+} from "../features/admin/adminUsersApi";
 import { useSession } from "../features/auth/SessionContext";
 import { formatReportDateTime } from "../features/reporte/ReportDetailView";
 
@@ -20,7 +27,7 @@ import styles from "./MisReportes.module.css";
 import ownStyles from "./GestionUsuarios.module.css";
 
 type Dialog =
-  | { kind: "create" }
+  | { kind: "invite" }
   | { kind: "password"; user: AdminUser }
   | { kind: "delete"; user: AdminUser }
   | null;
@@ -35,6 +42,7 @@ function roleLabel(entry: UserRole): string {
 export function GestionUsuariosPage() {
   const { session, user: currentUser, loading: sessionLoading } = useSession();
   const [users, setUsers] = useState<AdminUser[] | null>(null);
+  const [invitations, setInvitations] = useState<PendingInvitation[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -45,7 +53,9 @@ export function GestionUsuariosPage() {
 
   const load = useCallback(async () => {
     try {
-      setUsers(await listUsers());
+      const [nextUsers, nextInvitations] = await Promise.all([listUsers(), listInvitations()]);
+      setUsers(nextUsers);
+      setInvitations(nextInvitations);
       setError(null);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "No se pudo cargar el listado de usuarios.");
@@ -88,6 +98,38 @@ export function GestionUsuariosPage() {
     }
   }
 
+  async function resend(invitation: PendingInvitation) {
+    setBusyId(invitation.id);
+    setNotice(null);
+    setError(null);
+    try {
+      const updated = await resendInvitation(invitation.id);
+      setInvitations((previous) =>
+        previous.map((entry) => (entry.id === updated.id ? updated : entry)),
+      );
+      setNotice(`Se reenvió la invitación a ${updated.email}.`);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "No se pudo reenviar la invitación.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function cancel(invitation: PendingInvitation) {
+    setBusyId(invitation.id);
+    setNotice(null);
+    setError(null);
+    try {
+      await cancelInvitation(invitation.id);
+      setInvitations((previous) => previous.filter((entry) => entry.id !== invitation.id));
+      setNotice(`Se canceló la invitación a ${invitation.email}. El enlace ya no sirve.`);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "No se pudo cancelar la invitación.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   if (sessionLoading) {
     return <p className={styles.state}>Cargando…</p>;
   }
@@ -118,13 +160,19 @@ export function GestionUsuariosPage() {
         <div className={styles.titleBlock}>
           <h1 className={styles.title}>Gestión de usuarios</h1>
           <p className={styles.subtitle}>
-            Cree cuentas con email y contraseña, y active, desactive o borre usuarios.
+            Invite investigadores por email, y active, desactive o borre usuarios.
           </p>
         </div>
-        <button type="button" className={styles.primary} onClick={() => setDialog({ kind: "create" })}>
-          Crear usuario
+        <button type="button" className={styles.primary} onClick={() => setDialog({ kind: "invite" })}>
+          Invitar investigador
         </button>
       </div>
+
+      <p className={ownStyles.info}>
+        Las cuentas nuevas se crean por invitación y siempre con el rol{" "}
+        <strong>{ROLE_LABELS[Role.Investigador]}</strong>. La persona recibe un email con un enlace
+        para registrarse con su nombre y contraseña.
+      </p>
 
       {error ? (
         <p className={styles.error} role="alert">
@@ -136,6 +184,65 @@ export function GestionUsuariosPage() {
         <p className={ownStyles.success} role="status">
           {notice}
         </p>
+      ) : null}
+
+      {invitations.length > 0 ? (
+        <>
+          <h2 className={ownStyles.sectionTitle}>Invitaciones pendientes</h2>
+          <div className={styles.tableCard}>
+            <div className={styles.thead}>
+              <span className={`${styles.th} ${styles.colMain}`}>Email</span>
+              <span className={`${styles.th} ${ownStyles.colState}`}>Estado</span>
+              <span className={`${styles.th} ${styles.colDate}`}>Enviada</span>
+              <span className={`${styles.th} ${styles.colDate}`}>Vence</span>
+              <span className={`${styles.th} ${ownStyles.colActions}`} />
+            </div>
+            {invitations.map((invitation) => (
+              <div className={styles.row} key={invitation.id}>
+                <div className={styles.colMain}>
+                  <span className={ownStyles.name}>{invitation.email}</span>
+                  {invitation.inviterName ? (
+                    <span className={ownStyles.email}>Invitó: {invitation.inviterName}</span>
+                  ) : null}
+                </div>
+                <div className={ownStyles.colState}>
+                  <span
+                    className={`${ownStyles.badge} ${
+                      invitation.expired ? ownStyles.badgeExpired : ownStyles.badgePending
+                    }`}
+                  >
+                    {invitation.expired ? "Vencida" : "Pendiente"}
+                  </span>
+                </div>
+                <div className={styles.colDate}>
+                  <span className={styles.date}>{formatReportDateTime(invitation.createdAt)}</span>
+                </div>
+                <div className={styles.colDate}>
+                  <span className={styles.date}>{formatReportDateTime(invitation.expiresAt)}</span>
+                </div>
+                <div className={ownStyles.colActions}>
+                  <button
+                    type="button"
+                    className={styles.linkButton}
+                    disabled={busyId === invitation.id}
+                    onClick={() => void resend(invitation)}
+                  >
+                    Reenviar
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.danger}
+                    disabled={busyId === invitation.id}
+                    onClick={() => void cancel(invitation)}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <h2 className={ownStyles.sectionTitle}>Usuarios</h2>
+        </>
       ) : null}
 
       {users !== null && users.length > 0 ? (
@@ -246,13 +353,13 @@ export function GestionUsuariosPage() {
         </div>
       ) : null}
 
-      {dialog?.kind === "create" ? (
-        <CreateUserModal
+      {dialog?.kind === "invite" ? (
+        <InviteResearcherModal
           onClose={closeDialog}
-          onCreated={(created) => {
+          onInvited={(invitation) => {
             setDialog(null);
-            setNotice(`Se creó la cuenta de ${created.displayName}.`);
-            void load();
+            setNotice(`Se envió la invitación a ${invitation.email}.`);
+            setInvitations((previous) => [invitation, ...previous]);
           }}
         />
       ) : null}
