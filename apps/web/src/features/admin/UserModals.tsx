@@ -2,17 +2,17 @@ import {
   PASSWORD_MIN_LENGTH,
   ROLE_LABELS,
   Role,
-  createUserInputSchema,
+  inviteResearcherInputSchema,
   setUserPasswordInputSchema,
   type AdminUser,
-  type AssignableRole,
+  type PendingInvitation,
 } from "@canmedseg/shared";
 import { useEffect, useId, useState, type FormEvent, type ReactNode } from "react";
 
 import modalStyles from "../../components/consent/ConsentModal.module.css";
 import styles from "../../pages/GestionUsuarios.module.css";
 import { Field, TextInput } from "../reporte/FormFields";
-import { createUser, deleteUser, setUserPassword } from "./adminUsersApi";
+import { deleteUser, inviteResearcher, setUserPassword } from "./adminUsersApi";
 
 type ModalFrameProps = {
   title: string;
@@ -52,118 +52,58 @@ function errorMessage(cause: unknown, fallback: string): string {
   return cause instanceof Error ? cause.message : fallback;
 }
 
-const SELECTABLE_ROLES: readonly AssignableRole[] = [Role.Investigador, Role.Admin];
-
-type CreateErrors = Partial<Record<"displayName" | "email" | "password", string>>;
-
-export function CreateUserModal({
+export function InviteResearcherModal({
   onClose,
-  onCreated,
+  onInvited,
 }: {
   onClose: () => void;
-  onCreated: (user: AdminUser) => void;
+  onInvited: (invitation: PendingInvitation) => void;
 }) {
-  const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [roles, setRoles] = useState<AssignableRole[]>([Role.Investigador]);
-  const [errors, setErrors] = useState<CreateErrors>({});
+  const [fieldError, setFieldError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-
-  function toggleRole(role: AssignableRole) {
-    setRoles((previous) =>
-      previous.includes(role) ? previous.filter((entry) => entry !== role) : [...previous, role],
-    );
-  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitError(null);
 
-    const parsed = createUserInputSchema.safeParse({
-      displayName,
-      email,
-      password,
-      roles: [Role.Comun, ...roles].map((role) => ({ role, healthProfessionSubtype: null })),
-    });
-
+    const parsed = inviteResearcherInputSchema.safeParse({ email });
     if (!parsed.success) {
-      const next: CreateErrors = {};
-      for (const issue of parsed.error.issues) {
-        const [key] = issue.path;
-        if ((key === "displayName" || key === "email" || key === "password") && !next[key]) {
-          next[key] = issue.message;
-        }
-      }
-      setErrors(next);
+      setFieldError(parsed.error.issues[0]?.message ?? "Ingrese un email válido");
       return;
     }
 
-    setErrors({});
+    setFieldError(null);
     setSubmitting(true);
     try {
-      onCreated(await createUser(parsed.data));
+      onInvited(await inviteResearcher(parsed.data));
     } catch (cause) {
-      setSubmitError(errorMessage(cause, "No se pudo crear el usuario."));
+      setSubmitError(errorMessage(cause, "No se pudo enviar la invitación."));
       setSubmitting(false);
     }
   }
 
   return (
-    <ModalFrame title="Crear usuario" onClose={onClose}>
+    <ModalFrame title="Invitar investigador" onClose={onClose}>
       <form className={styles.form} onSubmit={(event) => void handleSubmit(event)} noValidate>
         <div className={modalStyles.body}>
           <div className={styles.form}>
-            <Field label="Nombre" htmlFor="new-user-name" required error={errors.displayName}>
+            <p className={styles.info}>
+              La persona invitada queda con el rol <strong>{ROLE_LABELS[Role.Investigador]}</strong>.
+              Recibirá un email con un enlace para crear su cuenta; el enlace vence en 7 días.
+            </p>
+            <Field label="Email" htmlFor="invite-email" required error={fieldError ?? undefined}>
               <TextInput
-                id="new-user-name"
-                value={displayName}
-                autoComplete="off"
-                hasError={Boolean(errors.displayName)}
-                onChange={(event) => setDisplayName(event.target.value)}
-              />
-            </Field>
-            <Field label="Email" htmlFor="new-user-email" required error={errors.email}>
-              <TextInput
-                id="new-user-email"
+                id="invite-email"
                 type="email"
                 value={email}
                 autoComplete="off"
-                hasError={Boolean(errors.email)}
+                autoFocus
+                hasError={Boolean(fieldError)}
                 onChange={(event) => setEmail(event.target.value)}
               />
             </Field>
-            <Field
-              label="Contraseña"
-              htmlFor="new-user-password"
-              required
-              hint={`Mínimo ${PASSWORD_MIN_LENGTH} caracteres. Compártala con el usuario por un medio seguro.`}
-              error={errors.password}
-            >
-              <TextInput
-                id="new-user-password"
-                type="password"
-                value={password}
-                autoComplete="new-password"
-                hasError={Boolean(errors.password)}
-                onChange={(event) => setPassword(event.target.value)}
-              />
-            </Field>
-
-            <fieldset className={styles.fieldset}>
-              <legend className={styles.legend}>Roles</legend>
-              {SELECTABLE_ROLES.map((role) => (
-                <label key={role} className={styles.check}>
-                  <input
-                    type="checkbox"
-                    checked={roles.includes(role)}
-                    onChange={() => toggleRole(role)}
-                  />
-                  {ROLE_LABELS[role]}
-                </label>
-              ))}
-            </fieldset>
 
             {submitError ? (
               <p className={modalStyles.error} role="alert">
@@ -178,7 +118,7 @@ export function CreateUserModal({
             Cancelar
           </button>
           <button type="submit" className={modalStyles.acceptBtn} disabled={submitting}>
-            {submitting ? "Creando…" : "Crear usuario"}
+            {submitting ? "Enviando…" : "Enviar invitación"}
           </button>
         </div>
       </form>
