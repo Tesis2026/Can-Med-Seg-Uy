@@ -192,7 +192,7 @@ export function LoginPage() {
             <div className={styles.errTxt}>
               <p className={styles.errTitle}>El servicio de inicio de sesión no está disponible.</p>
               <p className={styles.errDetail}>
-                Puede continuar como visitante y enviar su reporte sin iniciar sesión.
+                Intente nuevamente en unos minutos.
               </p>
             </div>
           </div>
@@ -201,10 +201,6 @@ export function LoginPage() {
         <div className={styles.linksRow}>
           <Link className={styles.link} to="/">
             Volver al inicio
-          </Link>
-          {/* Desvío del .pen: la Semana 3 exige una salida explícita a modo visitante. */}
-          <Link className={styles.link} to="/reporte">
-            Continuar como visitante
           </Link>
           <a className={styles.link} href="#ayuda">
             ¿Necesita ayuda?
