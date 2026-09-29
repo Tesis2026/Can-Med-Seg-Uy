@@ -11,6 +11,7 @@ import { analyticsRoutes } from "./analytics/analyticsRoutes";
 import { captchaRoutes } from "./captcha/captchaRoutes";
 import { config, isMockIdentityProvider } from "./config";
 import { pool } from "./database/pool";
+import { invitationRoutes } from "./invitations/invitationRoutes";
 import { reportRoutes } from "./reports/reportRoutes";
 
 function getZodIssues(error: unknown): unknown[] | null {
@@ -41,7 +42,7 @@ export async function buildApp() {
     const zodIssues = getZodIssues(error);
     if (zodIssues) {
       return reply.code(400).send({
-        message: request.url.startsWith("/api/admin/")
+        message: /^\/api\/(admin|invitations)\//.test(request.url)
           ? "Los datos ingresados son inválidos o están incompletos"
           : "El reporte contiene datos inválidos o incompletos",
         issues: zodIssues,
@@ -54,6 +55,7 @@ export async function buildApp() {
   await app.register(authRoutes, { prefix: "/api" });
   await app.register(betterAuthRoutes, { prefix: "/api" });
   await app.register(userAdminRoutes, { prefix: "/api" });
+  await app.register(invitationRoutes, { prefix: "/api" });
   await app.register(captchaRoutes, { prefix: "/api" });
   await app.register(reportRoutes, { prefix: "/api" });
   await app.register(analyticsRoutes, { prefix: "/api" });

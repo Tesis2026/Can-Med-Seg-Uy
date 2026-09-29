@@ -27,6 +27,12 @@ const environmentSchema = z.object({
 
   BETTER_AUTH_SECRET: z.string().min(32).default("canmedseg-better-auth-secreto-local-dev"),
 
+  /**
+   * Envío de emails: con `BREVO_API_KEY` se usa la API HTTP de Brevo (plan gratuito;
+   * funciona aunque el hosting bloquee los puertos SMTP). Si no, `SMTP_HOST`; si
+   * tampoco, los emails solo se muestran en la consola.
+   */
+  BREVO_API_KEY: z.string().optional(),
   SMTP_HOST: z.string().optional(),
   SMTP_PORT: z.coerce.number().int().positive().default(587),
   SMTP_SECURE: booleanFlag("false"),

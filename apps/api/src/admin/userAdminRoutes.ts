@@ -3,7 +3,6 @@ import {
   Role,
   adminUserListSchema,
   adminUserSchema,
-  createUserInputSchema,
   setUserPasswordInputSchema,
 } from "@canmedseg/shared";
 import { APIError } from "better-auth/api";
@@ -15,7 +14,6 @@ import { auth } from "../auth/betterAuth";
 import { requirePermission } from "../auth/guards";
 import { pool } from "../database/pool";
 import {
-  assignInitialRoles,
   countOtherActiveAdmins,
   findAdminUser,
   listAdminUsers,
@@ -86,40 +84,6 @@ export const userAdminRoutes: FastifyPluginAsync = async (app) => {
   app.get("/admin/users", { preHandler }, async (_request, reply) =>
     reply.send(adminUserListSchema.parse(await listAdminUsers(pool))),
   );
-
-  app.post("/admin/users", { preHandler }, async (request, reply) => {
-    const input = createUserInputSchema.parse(request.body ?? {});
-
-    let userId: string;
-    try {
-      const created = await auth.api.createUser({
-        headers: betterAuthHeaders(request),
-        body: {
-          email: input.email,
-          password: input.password,
-          name: input.displayName,
-          role: input.roles.some((entry) => entry.role === Role.Admin) ? "admin" : "user",
-        },
-      });
-      userId = created.user.id;
-    } catch (error) {
-      return sendError(reply, request, error);
-    }
-
-    try {
-      await assignInitialRoles(pool, userId, input.roles, request.auth.user?.id ?? null);
-    } catch (error) {
-      await auth.api
-        .removeUser({ headers: betterAuthHeaders(request), body: { userId } })
-        .catch((cleanupError: unknown) =>
-          request.log.error({ cleanupError, userId }, "No se pudo deshacer el alta incompleta"),
-        );
-      return sendError(reply, request, error);
-    }
-
-    const user = await findAdminUser(pool, userId);
-    return reply.code(201).send(adminUserSchema.parse(user));
-  });
 
   app.post("/admin/users/:id/password", { preHandler }, async (request, reply) => {
     const { id } = userParamsSchema.parse(request.params);

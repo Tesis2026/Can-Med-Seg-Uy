@@ -1,12 +1,15 @@
-import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from "@canmedseg/shared";
+import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH, Role } from "@canmedseg/shared";
+import { appInvite } from "@curedclick/app-invite";
 import { betterAuth } from "better-auth";
+import { APIError } from "better-auth/api";
 import { admin } from "better-auth/plugins/admin";
 
-import { isUserActive, recordLogin } from "../admin/userAdminRepository";
+import { assignInitialRoles, isUserActive, recordLogin } from "../admin/userAdminRepository";
 import { config } from "../config";
 import { pool } from "../database/pool";
 import { sendEmail } from "../email/mailer";
 import { passwordResetEmail } from "../email/templates";
+import { INVITATION_TTL_MS, sendInvitationEmail } from "../invitations/invitationEmail";
 
 const PASSWORD_RESET_TTL_SECONDS = 60 * 60;
 
@@ -131,6 +134,50 @@ export const auth = betterAuth({
         },
         session: {
           fields: { impersonatedBy: "impersonated_by" },
+        },
+      },
+    }),
+    // Alta por invitación: solo el admin invita, y toda cuenta invitada es Investigador.
+    appInvite({
+      invitationExpiresIn: INVITATION_TTL_MS,
+      // Las vencidas se conservan para poder reenviarlas desde Gestión de usuarios.
+      cleanupExpiredInvitations: false,
+      autoSignIn: true,
+      canCreateInvitation: (ctx) => ctx.context.session?.user.role === "admin",
+      canCancelInvitation: (ctx) => ctx.context.session?.user.role === "admin",
+      async sendInvitationEmail(invitation) {
+        if (!invitation.email) return;
+        await sendInvitationEmail({
+          invitationId: invitation.id,
+          email: invitation.email,
+          inviterName: invitation.inviter.name,
+        });
+      },
+      hooks: {
+        accept: {
+          before: (_ctx, user) => {
+            if (!user.name?.trim()) {
+              throw new APIError("BAD_REQUEST", { code: "NAME_REQUIRED", message: "Ingrese su nombre" });
+            }
+          },
+          after: async (_ctx, { invitation, user }) => {
+            await assignInitialRoles(
+              pool,
+              user.id,
+              [{ role: Role.Investigador, healthProfessionSubtype: null }],
+              invitation.inviterId,
+            );
+          },
+        },
+      },
+      schema: {
+        appInvitation: {
+          modelName: "app_invitations",
+          fields: {
+            inviterId: "inviter_id",
+            expiresAt: "expires_at",
+            domainWhitelist: "domain_whitelist",
+          },
         },
       },
     }),
