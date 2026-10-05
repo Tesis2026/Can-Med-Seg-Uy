@@ -160,7 +160,7 @@ export function GestionUsuariosPage() {
         <div className={styles.titleBlock}>
           <h1 className={styles.title}>Gestión de usuarios</h1>
           <p className={styles.subtitle}>
-            Invite investigadores por email, y active, desactive o borre usuarios.
+            Invitar investigadores por email, y activar, desactivar o borrar usuarios.
           </p>
         </div>
         <button type="button" className={styles.primary} onClick={() => setDialog({ kind: "invite" })}>
@@ -169,8 +169,7 @@ export function GestionUsuariosPage() {
       </div>
 
       <p className={ownStyles.info}>
-        Las cuentas nuevas se crean por invitación y siempre con el rol{" "}
-        <strong>{ROLE_LABELS[Role.Investigador]}</strong>. La persona recibe un email con un enlace
+        Las cuentas nuevas se crean por invitación. La persona recibe un email con un enlace
         para registrarse con su nombre y contraseña.
       </p>
 
@@ -290,10 +289,6 @@ export function GestionUsuariosPage() {
                     {isSelf ? " (usted)" : ""}
                   </span>
                   {entry.email ? <span className={ownStyles.email}>{entry.email}</span> : null}
-                  {/* Registro con GUB UY: deprecado momentáneamente; se identifica el origen de esas cuentas. */}
-                  {entry.identityProvider !== "local" ? (
-                    <span className={ownStyles.origin}>Cuenta creada con GUB UY</span>
-                  ) : null}
                 </div>
                 <div className={ownStyles.colRoles}>
                   {roles.length === 0 ? (

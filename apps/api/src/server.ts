@@ -1,4 +1,3 @@
-import { buildApp } from "./app";
 import { config } from "./config";
 import { runMigrations } from "./database/migrate";
 import { pool } from "./database/pool";
@@ -7,6 +6,8 @@ import { startPeriodicScheduler } from "./periodic/periodicScheduler";
 async function start(): Promise<void> {
   if (config.RUN_MIGRATIONS) await runMigrations();
 
+  // Better Auth valida el esquema al importarse: las migraciones deben terminar antes.
+  const { buildApp } = await import("./app");
   const app = await buildApp();
 
   // Debe registrarse ANTES de listen(): Fastify no permite addHook con el server ya abierto.

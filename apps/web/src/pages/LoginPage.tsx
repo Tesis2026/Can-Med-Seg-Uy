@@ -130,9 +130,6 @@ export function LoginPage() {
           <button type="submit" className={styles.submitBtn} disabled={offline || submitting}>
             {submitting ? "Ingresando…" : "Ingresar"}
           </button>
-          <p className={styles.hint}>
-            Las cuentas las crea el administrador del sistema.
-          </p>
         </form>
 
         {/*
@@ -202,9 +199,6 @@ export function LoginPage() {
           <Link className={styles.link} to="/">
             Volver al inicio
           </Link>
-          <a className={styles.link} href="#ayuda">
-            ¿Necesita ayuda?
-          </a>
         </div>
       </section>
     </div>

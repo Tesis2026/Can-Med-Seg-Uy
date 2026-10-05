@@ -90,8 +90,7 @@ export function InviteResearcherModal({
         <div className={modalStyles.body}>
           <div className={styles.form}>
             <p className={styles.info}>
-              La persona invitada queda con el rol <strong>{ROLE_LABELS[Role.Investigador]}</strong>.
-              Recibirá un email con un enlace para crear su cuenta; el enlace vence en 7 días.
+              La persona invitada recibirá un email con un enlace para crear su cuenta. El enlace vence en 7 días.
             </p>
             <Field label="Email" htmlFor="invite-email" required error={fieldError ?? undefined}>
               <TextInput

@@ -157,10 +157,6 @@ function EstadisticasDelSistema() {
 
   const total = numberFormat.format(stats.totalSubmitted);
   const own = numberFormat.format(stats.ownSubmitted);
-  const totalFrase =
-    stats.totalSubmitted === 1
-      ? "El sistema ya registra 1 reporte de evento adverso en Uruguay."
-      : `El sistema ya registra ${total} reportes de eventos adversos en Uruguay.`;
 
   return (
     <section className={styles.statsCard}>
@@ -175,10 +171,6 @@ function EstadisticasDelSistema() {
           <p className={styles.statLabel}>Reportes en Uruguay</p>
         </div>
       </div>
-      <p className={styles.statsLead}>
-        ¡Gracias por contribuir! Cada reporte fortalece la farmacovigilancia nacional.
-      </p>
-      <p className={styles.statsText}>{totalFrase} Cada reporte ayuda a mejorar la farmacovigilancia.</p>
     </section>
   );
 }
