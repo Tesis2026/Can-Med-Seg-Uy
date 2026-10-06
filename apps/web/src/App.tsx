@@ -9,6 +9,7 @@ import { FormulariosEnProgresoPage } from "./pages/FormulariosEnProgresoPage";
 import { GestionUsuariosPage } from "./pages/GestionUsuariosPage";
 import { HistorialPage } from "./pages/HistorialPage";
 import { InicioPage } from "./pages/InicioPage";
+import { ImportarReportesPage } from "./pages/ImportarReportesPage";
 import { LandingPage } from "./pages/LandingPage";
 import { LoginPage } from "./pages/LoginPage";
 import { OlvideContrasenaPage } from "./pages/OlvideContrasenaPage";
@@ -58,6 +59,7 @@ export function App() {
         {/* RF-7 y RF-8: dashboard, exportación y reportes periódicos. */}
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="exportaciones" element={<ExportacionesPage />} />
+        <Route path="importar-reportes" element={<ImportarReportesPage />} />
         <Route path="reportes-periodicos" element={<ReportesPeriodicosPage />} />
         <Route path="admin/usuarios" element={<GestionUsuariosPage />} />
       </Route>

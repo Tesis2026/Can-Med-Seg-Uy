@@ -1,10 +1,4 @@
-import {
-  REPORT_STATUS_DESCRIPTIONS,
-  REPORT_STATUS_LABELS,
-  ReportStatus,
-  type ReportDetail,
-  type SubmittedReportStatus,
-} from "@canmedseg/shared";
+import { type ReportDetail } from "@canmedseg/shared";
 import { useEffect, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 
@@ -18,17 +12,9 @@ import { fetchReport } from "../features/reporte/reportApi";
 
 import styles from "./MisReportes.module.css";
 
-const STATUS_CLASS: Record<SubmittedReportStatus, string> = {
-  [ReportStatus.EnRevision]: styles.statusEnRevision,
-  [ReportStatus.AprobadoLocal]: styles.statusAprobadoLocal,
-  [ReportStatus.AprobadoMsp]: styles.statusAprobadoMsp,
-  [ReportStatus.EnviadoMsp]: styles.statusEnviadoMsp,
-  [ReportStatus.Rechazado]: styles.statusRechazado,
-};
-
 /**
  * Frame «Detalle de reporte enviado» del .pen: vista de solo lectura con los
- * datos tal como se enviaron, más el estado actual del reporte (RF-6.1).
+ * datos tal como se enviaron (RF-6.1).
  */
 export function DetalleReportePage() {
   const { id = "" } = useParams();
@@ -85,14 +71,6 @@ export function DetalleReportePage() {
               <p className={styles.detailMeta}>
                 Enviado el {formatReportDateTime(detail.submittedAt)}
               </p>
-            </div>
-            <div className={styles.colStatus}>
-              <span className={`${styles.status} ${STATUS_CLASS[detail.status]}`}>
-                {REPORT_STATUS_LABELS[detail.status]}
-              </span>
-              <span className={styles.statusHint}>
-                {REPORT_STATUS_DESCRIPTIONS[detail.status]}
-              </span>
             </div>
           </div>
           <ReportDetailView detail={detail} />

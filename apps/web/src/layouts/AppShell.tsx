@@ -148,6 +148,9 @@ function HeaderMenu() {
               </Link>
             </>
           ) : null}
+          {hasPermission(session.permissions, Permission.ReportImport) ? (
+            <Link className={styles.menuItem} role="menuitem" to="/importar-reportes">Importar reportes</Link>
+          ) : null}
           {hasPermission(session.permissions, Permission.UsersManage) ? (
             <Link className={styles.menuItem} role="menuitem" to="/admin/usuarios">
               Gestión de usuarios

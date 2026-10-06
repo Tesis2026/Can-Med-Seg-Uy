@@ -368,6 +368,12 @@ export const createdReportSchema = z.object({
 export type CreatedReport = z.infer<typeof createdReportSchema>;
 
 export const reportDetailSchema = z.object({
+  importDetails: z.object({
+    externalId: z.string(),
+    filename: z.string(),
+    warnings: z.array(z.string()),
+    sourceData: z.record(z.array(z.record(z.string())).or(z.record(z.string()))),
+  }).optional(),
   id: z.string().uuid(),
   status: submittedReportStatusSchema,
   createdAt: z.string().datetime(),

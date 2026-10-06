@@ -1,10 +1,4 @@
-import {
-  REPORT_STATUS_DESCRIPTIONS,
-  REPORT_STATUS_LABELS,
-  ReportStatus,
-  type ReportHistoryItem,
-  type SubmittedReportStatus,
-} from "@canmedseg/shared";
+import { type ReportHistoryItem } from "@canmedseg/shared";
 import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 
@@ -13,14 +7,6 @@ import { formatReportDateTime } from "../features/reporte/ReportDetailView";
 import { listOwnReports } from "../features/reporte/reportApi";
 
 import styles from "./MisReportes.module.css";
-
-const STATUS_CLASS: Record<SubmittedReportStatus, string> = {
-  [ReportStatus.EnRevision]: styles.statusEnRevision,
-  [ReportStatus.AprobadoLocal]: styles.statusAprobadoLocal,
-  [ReportStatus.AprobadoMsp]: styles.statusAprobadoMsp,
-  [ReportStatus.EnviadoMsp]: styles.statusEnviadoMsp,
-  [ReportStatus.Rechazado]: styles.statusRechazado,
-};
 
 function reportTitle(report: Pick<ReportHistoryItem, "patientInitials" | "patientNationalId">) {
   const parts = [report.patientInitials, report.patientNationalId].filter(
@@ -83,7 +69,7 @@ export function HistorialPage() {
       <div className={styles.titleBlock}>
         <h1 className={styles.title}>Historial de reportes enviados</h1>
         <p className={styles.subtitle}>
-          Consulte los reportes que ya fueron enviados al sistema y el estado de cada uno.
+          Consulte los reportes que ya fueron enviados al sistema.
         </p>
       </div>
 
@@ -111,7 +97,7 @@ export function HistorialPage() {
       {reports !== null && reports.length === 0 ? (
         <div className={styles.empty}>
           <p className={styles.emptyText}>
-            Todavía no envió ningún reporte. Cuando envíe uno, aparecerá acá con su estado.
+            Todavía no envió ningún reporte. Cuando envíe uno, aparecerá acá.
           </p>
           <Link className={styles.primary} to="/reporte?nuevo=1">
             Nuevo reporte
@@ -124,7 +110,6 @@ export function HistorialPage() {
           <div className={styles.thead}>
             <span className={`${styles.th} ${styles.colMain}`}>Paciente</span>
             <span className={`${styles.th} ${styles.colDate}`}>Enviado</span>
-            <span className={`${styles.th} ${styles.colStatus}`}>Estado</span>
             <span className={`${styles.th} ${styles.colLink}`} />
           </div>
 
@@ -146,14 +131,6 @@ export function HistorialPage() {
               </div>
               <div className={styles.colDate}>
                 <span className={styles.date}>{formatReportDateTime(report.submittedAt)}</span>
-              </div>
-              <div className={styles.colStatus}>
-                <span className={`${styles.status} ${STATUS_CLASS[report.status]}`}>
-                  {REPORT_STATUS_LABELS[report.status]}
-                </span>
-                <span className={styles.statusHint}>
-                  {REPORT_STATUS_DESCRIPTIONS[report.status]}
-                </span>
               </div>
               <div className={styles.colLink}>
                 <Link className={styles.link} to={`/historial/${report.id}`}>

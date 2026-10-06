@@ -223,7 +223,7 @@ export async function getDashboard(
       pool,
       filters,
       "report_adverse_events",
-      "CASE WHEN c.is_serious THEN 'grave' ELSE 'no_grave' END",
+      "CASE WHEN c.is_serious THEN 'grave' WHEN c.is_serious = false THEN 'no_grave' END",
     ),
     countReportsBy(pool, filters, "to_char(r.submitted_at, 'YYYY-MM')"),
     countReportsBy(pool, filters, "r.patient_department"),

@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "test:imports": "tsx --test src/imports/vigiflow.test.ts src/imports/import.integration.test.ts",
     "dev": "tsx watch src/server.ts",
     "start": "tsx src/server.ts",
     "db:migrate": "tsx src/database/migrate.ts",

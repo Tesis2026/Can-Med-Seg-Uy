@@ -206,7 +206,7 @@ export const reportRoutes: FastifyPluginAsync = async (app) => {
     async (request, reply) => {
       const { id } = reportParamsSchema.parse(request.params);
       const detail = await getReviewReport(pool, id);
-      if (!detail) return reply.code(404).send({ message: "Reporte no encontrado o ya revisado." });
+      if (!detail) return reply.code(404).send({ message: "Reporte no encontrado." });
       return reply.send(reviewReportDetailSchema.parse(detail));
     },
   );

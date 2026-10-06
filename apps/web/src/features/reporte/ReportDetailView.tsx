@@ -67,6 +67,20 @@ export function ReportDetailView({ detail, readonlyNote = true }: ReportDetailVi
       ) : null}
 
       <div className={styles.detailCard}>
+        {detail.importDetails && <section>
+          <h2 className={styles.detailSection}>Origen del reporte</h2>
+          <p>VigiFlow · {detail.importDetails.externalId} · {detail.importDetails.filename}</p>
+          <details><summary>Datos originales de VigiFlow</summary>
+            {Object.entries(detail.importDetails.sourceData).map(([sheet, data]) => <section key={sheet}>
+              <h3>{({ report: 'Reportes', medicines: 'Medicamentos', reactions: 'Reacciones' } as Record<string, string>)[sheet] ?? sheet}</h3>
+              {(Array.isArray(data) ? data : [data]).map((row, index) => <dl key={index}>
+                {Object.entries(row).filter(([field, value]) => field !== '__row' && value).map(([field, value]) => <div key={field}>
+                  <dt>{field}</dt><dd style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{value}</dd>
+                </div>)}
+              </dl>)}
+            </section>)}
+          </details>
+        </section>}
         <h2 className={styles.detailSection}>Información general del paciente</h2>
         <div className={styles.detailGrid}>
           <ReadOnlyField label="Iniciales" value={patient.initials} />

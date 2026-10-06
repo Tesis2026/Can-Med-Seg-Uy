@@ -256,7 +256,7 @@ export function DashboardPage() {
                         </span>
                       </td>
                       <td>
-                        {row.serious ? (
+                          {row.serious === null ? <span>Sin dato</span> : row.serious ? (
                           <span className={styles.serious}>Grave</span>
                         ) : (
                           <span className={styles.notSerious}>No grave</span>

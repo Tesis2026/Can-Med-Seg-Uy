@@ -248,3 +248,4 @@ export {
   type RequestPasswordResetInput,
   type ResetPasswordInput,
 } from "./schemas/adminUsers";
+export type { ReportImportRow, ReportImportPreview, ReportImportResult } from './schemas/reportImport';

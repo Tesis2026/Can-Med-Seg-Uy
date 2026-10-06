@@ -1,0 +1,19 @@
+.page { width: 100%; max-width: 1120px; min-width: 0; margin: 0 auto; color: var(--color-text); }
+.page h1 { margin-top: 0; }
+.card { background: white; border: 1px solid #d9e0e8; padding: 24px; margin: 24px 0; border-radius: 8px; }
+.card h2 { margin-top: 0; }
+.page p { margin: 12px 0; }
+.card input { max-width: 100%; }
+.card label, .card input { display: block; margin: 14px 0; }
+.card button { background: #214f8c; color: white; border: 0; border-radius: 4px; padding: 12px 20px; cursor: pointer; margin-top: 16px; font: inherit; }
+.card button:disabled { opacity: .55; cursor: default; }
+.tableWrap { overflow-x: auto; }
+.card table { border-collapse: collapse; width: 100%; text-align: left; }
+.card th, .card td { padding: 14px; border-bottom: 1px solid #d9e0e8; vertical-align: top; }
+.card th { background: #eff3f8; }
+.card details { margin-top: 10px; max-width: 600px; }
+.card summary { cursor: pointer; color: #214f8c; }
+.card li { margin: 8px 0; }
+.card pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; }
+.error { color: #a31515; }
+@media (max-width: 600px) { .card { padding: 16px; } .page h1 { font-size: 26px; } }

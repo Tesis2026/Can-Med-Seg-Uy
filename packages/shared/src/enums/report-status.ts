@@ -52,7 +52,7 @@ export const REPORT_STATUS_LABELS: Record<ReportStatus, string> = {
 /** Texto de apoyo para el notificador (no para el investigador). */
 export const REPORT_STATUS_DESCRIPTIONS: Record<SubmittedReportStatus, string> = {
   [ReportStatus.EnRevision]: "Recibido. Un investigador debe validarlo.",
-  [ReportStatus.AprobadoLocal]: "Validado y conservado para el análisis nacional.",
+  // [ReportStatus.AprobadoLocal]: "Validado para análisis nacional.",
   [ReportStatus.AprobadoMsp]: "Validado; la remisión al MSP está pendiente.",
   [ReportStatus.EnviadoMsp]: "Validado y remitido al Ministerio de Salud Pública.",
   [ReportStatus.Rechazado]: "Se consideró no relacionado con la farmacovigilancia de cannabis.",

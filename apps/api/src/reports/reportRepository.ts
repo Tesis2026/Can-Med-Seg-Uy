@@ -59,7 +59,7 @@ function metadata(row: ReportRow): CreatedReport {
  * Columnas desnormalizadas del reporte enviado. `form_data` guarda el borrador
  * completo; estas columnas son las que consultan los listados y el dashboard.
  */
-const SUBMITTED_COLUMNS = [
+export const SUBMITTED_COLUMNS = [
   "patient_initials",
   "patient_national_id",
   "patient_sex",
@@ -85,7 +85,7 @@ const SUBMITTED_COLUMNS = [
   "form_data",
 ] as const;
 
-function submittedValues(report: SubmitAdverseEventReport): unknown[] {
+export function submittedValues(report: SubmitAdverseEventReport): unknown[] {
   return [
     report.patient.initials,
     report.patient.nationalId || null,
@@ -198,7 +198,7 @@ async function insertConcomitants(
   }
 }
 
-async function replaceNestedRows(
+export async function replaceNestedRows(
   client: PoolClient,
   reportId: string,
   report: SubmitAdverseEventReport,
@@ -304,7 +304,13 @@ export async function getReport(
   );
   const row = result.rows[0];
   if (!row) return null;
+  const imported = await pool.query<{ external_report_id: string; filename: string; warnings: string[]; source_data: NonNullable<ReportDetail['importDetails']>['sourceData'] }>(
+    `SELECT r.external_report_id, i.filename, i.warnings, i.source_data
+       FROM reports r JOIN report_import_details i ON i.report_id = r.id WHERE r.id = $1`, [id],
+  );
+  const source = imported.rows[0];
   return {
+    importDetails: source ? { externalId: source.external_report_id, filename: source.filename, warnings: source.warnings, sourceData: source.source_data } : undefined,
     id: row.id,
     status: row.status,
     createdAt: row.created_at.toISOString(),

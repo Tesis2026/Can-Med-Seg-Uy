@@ -13,6 +13,7 @@ import { config, isMockIdentityProvider } from "./config";
 import { pool } from "./database/pool";
 import { invitationRoutes } from "./invitations/invitationRoutes";
 import { reportRoutes } from "./reports/reportRoutes";
+import { importRoutes } from "./imports/importRoutes";
 
 function getZodIssues(error: unknown): unknown[] | null {
   if (typeof error !== "object" || error === null) return null;
@@ -39,6 +40,9 @@ export async function buildApp() {
   });
 
   app.setErrorHandler((error, request, reply) => {
+    if ((error as { code?: string }).code === 'FST_ERR_CTP_BODY_TOO_LARGE') {
+      return reply.code(413).send({ message: 'El archivo o la solicitud supera el tamaño permitido.' });
+    }
     const zodIssues = getZodIssues(error);
     if (zodIssues) {
       return reply.code(400).send({
@@ -58,6 +62,7 @@ export async function buildApp() {
   await app.register(invitationRoutes, { prefix: "/api" });
   await app.register(captchaRoutes, { prefix: "/api" });
   await app.register(reportRoutes, { prefix: "/api" });
+  await app.register(importRoutes, { prefix: "/api" });
   await app.register(analyticsRoutes, { prefix: "/api" });
 
   // Registro con GUB UY: deprecado momentáneamente. El IdP mock se sigue montando

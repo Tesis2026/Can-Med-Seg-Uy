@@ -5,6 +5,7 @@ import { Role, isActiveRole } from "../enums/role";
  * Los guards de la API y las rutas de la web consultan esta única fuente.
  */
 export const Permission = {
+  ReportImport: "report:import",
   /** Llenar y enviar un reporte (también anónimo, con CAPTCHA + email). */
   ReportSubmit: "report:submit",
   /** Guardar borradores (RF-4) — solo usuarios logueados. */
@@ -44,6 +45,7 @@ const NOTIFIER_PERMISSIONS: readonly Permission[] = [
  * (rol separado para la transferencia institucional — plan-arquitectura.md).
  */
 const REVIEWER_PERMISSIONS: readonly Permission[] = [
+  Permission.ReportImport,
   ...NOTIFIER_PERMISSIONS,
   Permission.ReportReview,
   Permission.DashboardRead,

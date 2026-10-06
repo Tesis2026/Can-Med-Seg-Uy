@@ -5,13 +5,12 @@ import {
   visibleRoles,
   type NotifierStats,
   type PermissionValue,
-  type ReviewSummary,
 } from "@canmedseg/shared";
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, Navigate } from "react-router-dom";
 
 import { useSession } from "../features/auth/SessionContext";
-import { fetchNotifierStats, fetchReviewSummary } from "../features/reporte/reportApi";
+import { fetchNotifierStats } from "../features/reporte/reportApi";
 
 import styles from "./InicioPage.module.css";
 
@@ -35,6 +34,7 @@ export function InicioPage() {
 
   const permissions: readonly PermissionValue[] = session.permissions;
   const puedeRevisar = hasPermission(permissions, Permission.ReportReview);
+  const esAdmin = hasPermission(permissions, Permission.UsersManage);
   const roles = visibleRoles(user.roles.map((entry) => entry.role));
 
   return (
@@ -53,8 +53,11 @@ export function InicioPage() {
         ) : null}
       </section>
 
-      {/* El investigador ve la carga de revisión; el notificador, su aporte. */}
+      {/* Resumen operativo temporalmente deshabilitado junto con la bandeja de revisión.
       {puedeRevisar ? <ResumenOperativo /> : <EstadisticasDelSistema />}
+      */}
+      {/* Se ocultan las estadísticas del sistema para el administrador. */}
+      {!puedeRevisar && !esAdmin ? <EstadisticasDelSistema /> : null}
 
       {hasPermission(permissions, Permission.UsersManage) ? (
         <>
@@ -72,6 +75,10 @@ export function InicioPage() {
 
       <h2 className={styles.sectionTitle}>Reportes</h2>
       <div className={styles.grid}>
+        {hasPermission(permissions, Permission.ReportImport) ? (
+          <ActionCard to="/importar-reportes" icon={<IconNuevo />}
+            title="Importar reportes" description="Cargar reportes desde un archivo Excel de VigiFlow." />
+        ) : null}
         {hasPermission(permissions, Permission.ReportSubmit) ? (
           <ActionCard
             to="/reporte?nuevo=1"
@@ -96,6 +103,9 @@ export function InicioPage() {
             description="Consultar reportes enviados anteriormente."
           />
         ) : null}
+        {/* Bandeja de revisión deshabilitada: el sistema ya no recibe reportes de
+            usuarios comunes, por lo que esta instancia de validación dejó de
+            formar parte del flujo de trabajo vigente.
         {hasPermission(permissions, Permission.ReportReview) ? (
           <ActionCard
             to="/revision"
@@ -103,7 +113,7 @@ export function InicioPage() {
             title="Bandeja de revisión"
             description="Validar reportes enviados y clasificarlos."
           />
-        ) : null}
+        ) : null} */}
         {hasPermission(permissions, Permission.DashboardRead) ? (
           <ActionCard
             to="/dashboard"
@@ -117,7 +127,7 @@ export function InicioPage() {
             to="/exportaciones"
             icon={<IconExportar />}
             title="Exportaciones"
-            description="Descargar los reportes filtrados en Excel o CSV."
+            description="Descargar los reportes filtrados en formato Excel o CSV."
           />
         ) : null}
         {hasPermission(permissions, Permission.PeriodicReportsReceive) ? (
@@ -175,7 +185,8 @@ function EstadisticasDelSistema() {
   );
 }
 
-/** Frame «Home investigador»: carga de trabajo de validación. */
+/* Resumen operativo deshabilitado mientras la bandeja de revisión no forme parte
+   del flujo vigente.
 function ResumenOperativo() {
   const [summary, setSummary] = useState<ReviewSummary | null>(null);
   const [failed, setFailed] = useState(false);
@@ -211,11 +222,12 @@ function ResumenOperativo() {
           <p className={styles.statValue}>{valor(summary.aprobados)}</p>
           <p className={styles.statLabel}>Aprobados</p>
         </div>
-        {/* Envío al MSP: desactivado momentáneamente (tarjeta «Envíos MSP pendientes»). */}
+        // Envío al MSP: desactivado momentáneamente (tarjeta «Envíos MSP pendientes»).
       </div>
     </section>
   );
 }
+*/
 
 type ActionCardProps = {
   to: string;
@@ -265,6 +277,7 @@ function IconHistorial() {
   );
 }
 
+/* Ícono conservado junto con el acceso deshabilitado.
 function IconRevision() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -273,6 +286,7 @@ function IconRevision() {
     </svg>
   );
 }
+*/
 
 function IconDashboard() {
   return (
