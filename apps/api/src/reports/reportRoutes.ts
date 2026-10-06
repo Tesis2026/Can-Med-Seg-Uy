@@ -252,7 +252,9 @@ export const reportRoutes: FastifyPluginAsync = async (app) => {
     const { id } = reportParamsSchema.parse(request.params);
     const report = await getReport(pool, id, {
       userId: request.auth.user?.id ?? null,
-      canReview: hasPermission(request.auth.permissions, Permission.ReportReview),
+      canReview:
+        hasPermission(request.auth.permissions, Permission.ReportReview) ||
+        hasPermission(request.auth.permissions, Permission.DashboardRead),
     });
     if (!report) {
       return reply.code(404).send({ message: "Reporte no encontrado" });

@@ -57,6 +57,11 @@ export function DashboardPage() {
   const [table, setTable] = useState<ReportTablePage | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState(() => searchParams.get("search") ?? "");
+  const dashboardReturnTo = useMemo(() => {
+    const params = filtersToParams(filters);
+    if (search.trim()) params.set("search", search.trim());
+    return `/dashboard?${params.toString()}`;
+  }, [filters, search]);
   const [sort, setSort] = useState<ReportTableSort>("submittedAt");
   const [direction, setDirection] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(1);
@@ -268,7 +273,11 @@ export function DashboardPage() {
                         {row.medicineSummary ? ` · ${row.medicineSummary}` : ""}
                       </td>
                       <td>
-                        <Link className={styles.rowLink} to={`/revision/${row.id}`}>
+                        <Link
+                          className={styles.rowLink}
+                          to={`/historial/${row.id}`}
+                          state={{ returnTo: dashboardReturnTo }}
+                        >
                           Ver
                         </Link>
                       </td>

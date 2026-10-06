@@ -18,8 +18,6 @@ import { RegistroPage } from "./pages/RegistroPage";
 import { ReporteWizardPage } from "./pages/ReporteWizardPage";
 import { ReportesPeriodicosPage } from "./pages/ReportesPeriodicosPage";
 import { RestablecerContrasenaPage } from "./pages/RestablecerContrasenaPage";
-import { RevisionDetallePage } from "./pages/RevisionDetallePage";
-import { RevisionPage } from "./pages/RevisionPage";
 
 /**
  * La raíz es la landing institucional para quien no inició sesión y la home
@@ -53,9 +51,8 @@ export function App() {
         <Route path="formularios-en-progreso" element={<FormulariosEnProgresoPage />} />
         <Route path="historial" element={<HistorialPage />} />
         <Route path="historial/:id" element={<DetalleReportePage />} />
-        {/* RF-5: bandeja y detalle de revisión (investigador / MSP). */}
-        <Route path="revision" element={<RevisionPage />} />
-        <Route path="revision/:id" element={<RevisionDetallePage />} />
+        {/* Ruta retirada: bloquear el acceso directo y rutas antiguas de revisión. */}
+        <Route path="revision/*" element={<Navigate to="/" replace />} />
         {/* RF-7 y RF-8: dashboard, exportación y reportes periódicos. */}
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="exportaciones" element={<ExportacionesPage />} />

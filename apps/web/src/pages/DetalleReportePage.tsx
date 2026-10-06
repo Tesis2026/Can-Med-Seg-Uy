@@ -1,6 +1,6 @@
 import { type ReportDetail } from "@canmedseg/shared";
 import { useEffect, useState } from "react";
-import { Link, Navigate, useParams } from "react-router-dom";
+import { Link, Navigate, useLocation, useParams } from "react-router-dom";
 
 import { useSession } from "../features/auth/SessionContext";
 import {
@@ -18,6 +18,12 @@ import styles from "./MisReportes.module.css";
  */
 export function DetalleReportePage() {
   const { id = "" } = useParams();
+  const location = useLocation();
+  const returnTo = (location.state as { returnTo?: unknown } | null)?.returnTo;
+  const backPath = typeof returnTo === "string" && (returnTo === "/dashboard" || returnTo.startsWith("/dashboard?"))
+    ? returnTo
+    : "/historial";
+  const backLabel = backPath.startsWith("/dashboard") ? "Volver al dashboard" : "Volver al historial";
   const { session, loading: sessionLoading } = useSession();
   const [detail, setDetail] = useState<ReportDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -49,8 +55,8 @@ export function DetalleReportePage() {
 
   return (
     <div className={styles.page}>
-      <Link className={styles.back} to="/historial">
-        ← Volver al historial
+      <Link className={styles.back} to={backPath}>
+        ← {backLabel}
       </Link>
 
       {error ? (
