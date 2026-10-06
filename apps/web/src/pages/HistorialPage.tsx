@@ -4,7 +4,7 @@ import { Link, Navigate } from "react-router-dom";
 
 import { useSession } from "../features/auth/SessionContext";
 import { formatReportDateTime } from "../features/reporte/ReportDetailView";
-import { listOwnReports } from "../features/reporte/reportApi";
+import { deleteOwnReport, listOwnReports } from "../features/reporte/reportApi";
 
 import styles from "./MisReportes.module.css";
 
@@ -24,6 +24,8 @@ export function HistorialPage() {
   const [reports, setReports] = useState<ReportHistoryItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!session.authenticated) return;
@@ -62,6 +64,20 @@ export function HistorialPage() {
 
   if (!session.authenticated) {
     return <Navigate to="/login?returnTo=%2Fhistorial" replace />;
+  }
+
+  async function handleDelete(id: string) {
+    setDeletingId(id);
+    setError(null);
+    try {
+      await deleteOwnReport(id);
+      setReports((previous) => (previous ?? []).filter((report) => report.id !== id));
+      setConfirmingId(null);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "No se pudo eliminar el reporte.");
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   return (
@@ -110,7 +126,7 @@ export function HistorialPage() {
           <div className={styles.thead}>
             <span className={`${styles.th} ${styles.colMain}`}>Paciente</span>
             <span className={`${styles.th} ${styles.colDate}`}>Enviado</span>
-            <span className={`${styles.th} ${styles.colLink}`} />
+            <span className={`${styles.th} ${styles.historyActions}`}>Acciones</span>
           </div>
 
           {filtered.length === 0 ? (
@@ -132,10 +148,41 @@ export function HistorialPage() {
               <div className={styles.colDate}>
                 <span className={styles.date}>{formatReportDateTime(report.submittedAt)}</span>
               </div>
-              <div className={styles.colLink}>
+              <div className={styles.historyActions}>
                 <Link className={styles.link} to={`/historial/${report.id}`}>
                   Ver
                 </Link>
+                {confirmingId === report.id ? (
+                  <>
+                    <span className={styles.confirmText}>¿Eliminar este reporte?</span>
+                    <button
+                      type="button"
+                      className={styles.danger}
+                      disabled={deletingId === report.id}
+                      onClick={() => void handleDelete(report.id)}
+                    >
+                      {deletingId === report.id ? "Eliminando…" : "Sí, eliminar"}
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.linkButton}
+                      disabled={deletingId === report.id}
+                      onClick={() => setConfirmingId(null)}
+                    >
+                      Cancelar
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    className={styles.danger}
+                    disabled={deletingId !== null}
+                    aria-label={`Eliminar reporte de ${reportTitle(report)}`}
+                    onClick={() => setConfirmingId(report.id)}
+                  >
+                    Eliminar
+                  </button>
+                )}
               </div>
             </div>
           ))}

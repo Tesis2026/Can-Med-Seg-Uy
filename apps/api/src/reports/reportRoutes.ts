@@ -21,6 +21,7 @@ import {
   createDraft,
   createReport,
   deleteDraft,
+  deleteOwnReport,
   getDraft,
   getNotifierStats,
   getReport,
@@ -168,6 +169,17 @@ export const reportRoutes: FastifyPluginAsync = async (app) => {
     "/reports/history",
     { preHandler: requirePermission(Permission.ReportHistoryRead) },
     async (request, reply) => reply.send(await listOwnReports(pool, sessionUserId(request))),
+  );
+
+  app.delete(
+    "/reports/history/:id",
+    { preHandler: requirePermission(Permission.ReportHistoryRead) },
+    async (request, reply) => {
+      const { id } = reportParamsSchema.parse(request.params);
+      const deleted = await deleteOwnReport(pool, id, sessionUserId(request));
+      if (!deleted) return reply.code(404).send({ message: "Reporte no encontrado" });
+      return reply.code(204).send();
+    },
   );
 
   /** Contadores de la home del notificador (propios + total nacional). */

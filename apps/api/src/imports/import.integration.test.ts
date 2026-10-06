@@ -116,6 +116,16 @@ test('integración del importador con API y PostgreSQL', { skip: process.env.IMP
       const count = await pool.query('SELECT count(*)::int AS total FROM reports WHERE notifier_user_id = $1', [userId]);
       assert.equal(count.rows[0].total, 2);
     });
+    await t.test('eliminar desde el historial borra solo el reporte propio y sus datos asociados', async () => {
+      const response = await app.inject({ method: 'DELETE', url: `/api/reports/history/${id}`, headers: { cookie } });
+      assert.equal(response.statusCode, 204, response.body);
+      const detail = await app.inject({ method: 'GET', url: `/api/reports/${id}`, headers: { cookie } });
+      assert.equal(detail.statusCode, 404);
+      const history = await app.inject({ method: 'GET', url: '/api/reports/history', headers: { cookie } });
+      assert.ok(history.json().every((report: { id: string }) => report.id !== id));
+      const importedDetails = await pool.query('SELECT count(*)::int AS total FROM report_import_details WHERE report_id = $1', [id]);
+      assert.equal(importedDetails.rows[0].total, 0);
+    });
   } finally {
     if (userId) {
       await pool.query('DELETE FROM reports WHERE notifier_user_id = $1', [userId]);

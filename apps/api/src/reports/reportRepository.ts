@@ -453,6 +453,17 @@ export async function deleteDraft(pool: Pool, id: string, userId: string): Promi
  * Historial propio (RF-6).
  * ------------------------------------------------------------------ */
 
+/** Elimina un reporte enviado del historial, solo si pertenece al usuario. */
+export async function deleteOwnReport(pool: Pool, id: string, userId: string): Promise<boolean> {
+  const result = await pool.query(
+    `DELETE FROM reports
+      WHERE id = $1 AND notifier_user_id = $2
+        AND status NOT IN ('en_progreso', 'rechazado')`,
+    [id, userId],
+  );
+  return (result.rowCount ?? 0) > 0;
+}
+
 export async function listOwnReports(pool: Pool, userId: string): Promise<ReportHistoryItem[]> {
   const result = await pool.query<HistoryRow>(
     `SELECT id, status, submitted_at, patient_initials, patient_national_id,

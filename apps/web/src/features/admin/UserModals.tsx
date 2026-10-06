@@ -1,7 +1,5 @@
 import {
   PASSWORD_MIN_LENGTH,
-  ROLE_LABELS,
-  Role,
   inviteResearcherInputSchema,
   setUserPasswordInputSchema,
   type AdminUser,
