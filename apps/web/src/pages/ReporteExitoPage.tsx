@@ -15,7 +15,7 @@ export function ReporteExitoPage() {
         <h1>Reporte enviado</h1>
         <p className={styles.lead}>
           Gracias. Su notificación de evento adverso fue registrada correctamente y quedó
-          en revisión.
+          disponible para el análisis.
         </p>
         {reportId ? (
           <p className={styles.muted}>Identificador del reporte: {reportId}</p>
