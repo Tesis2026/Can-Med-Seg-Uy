@@ -234,9 +234,9 @@ export function DeleteUserModal({
           {user.email ? ` (${user.email})` : ""}?
         </p>
         <p className={styles.warning}>
-          Se eliminan también todos sus reportes enviados, sus formularios en progreso y su
-          historial. Esta acción no se puede deshacer. Si solo quiere impedir que ingrese,
-          desactive la cuenta.
+          Los reportes que cargó o importó se conservan y siguen disponibles para el
+          análisis. Se eliminan sus formularios en progreso. Esta acción no se puede
+          deshacer. Si solo quiere impedir que ingrese, desactive la cuenta.
         </p>
         {submitError ? (
           <p className={modalStyles.error} role="alert">
