@@ -131,3 +131,88 @@ export function invitationEmail(input: {
 
   return { to: input.to, subject, text, html };
 }
+
+export type PeriodicReportChart = {
+  label: string;
+  unit: string;
+  total: number;
+  /** Categorías con más casos, ya ordenadas de mayor a menor. */
+  rows: { label: string; value: number; percentage: number }[];
+};
+
+export function periodicReportEmail(input: {
+  to: string;
+  name: string;
+  frequencyLabel: string;
+  periodLabel: string;
+  reportCount: number;
+  charts: PeriodicReportChart[];
+  dashboardUrl: string;
+}): EmailMessage {
+  const greeting = input.name ? `Hola ${input.name}:` : "Hola:";
+  const subject = `Reporte ${input.frequencyLabel.toLowerCase()} de farmacovigilancia (${input.periodLabel})`;
+  const reports = input.reportCount === 1 ? "1 reporte" : `${input.reportCount} reportes`;
+
+  const text = [
+    greeting,
+    "",
+    `Este es su reporte ${input.frequencyLabel.toLowerCase()} del sistema de Farmacovigilancia`,
+    `de Cannabis Medicinal. Período: ${input.periodLabel}. Reportes del período: ${reports}.`,
+    "",
+    ...input.charts.flatMap((chart) => [
+      `${chart.label} (${chart.total} ${chart.unit}):`,
+      ...(chart.rows.length
+        ? chart.rows.map((row) => `  - ${row.label}: ${row.value} (${row.percentage} %)`)
+        : ["  - Sin datos en el período"]),
+      "",
+    ]),
+    "Para ver los gráficos completos, abra el dashboard con el período ya filtrado:",
+    input.dashboardUrl,
+    "",
+    "Puede cambiar la frecuencia o los gráficos incluidos desde «Reportes periódicos».",
+    "",
+    "Farmacovigilancia - Ministerio de Salud Pública",
+  ].join("\n");
+
+  const chartsHtml = input.charts
+    .map((chart) => {
+      const rows = chart.rows.length
+        ? chart.rows
+            .map(
+              (row) => `
+              <tr>
+                <td style="padding:4px 0;">${escapeHtml(row.label)}</td>
+                <td style="padding:4px 0;text-align:right;white-space:nowrap;">${row.value} (${row.percentage} %)</td>
+              </tr>`,
+            )
+            .join("")
+        : `
+              <tr><td colspan="2" style="padding:4px 0;color:#666666;">Sin datos en el período</td></tr>`;
+      return `
+          <p style="margin:16px 0 4px;font-weight:600;">
+            ${escapeHtml(chart.label)}
+            <span style="font-weight:400;color:#666666;">· ${chart.total} ${escapeHtml(chart.unit)}</span>
+          </p>
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="font-size:13px;border-top:1px solid #e0e0e0;">${rows}
+          </table>`;
+    })
+    .join("");
+
+  const url = escapeHtml(input.dashboardUrl);
+  const html = layout(`
+          <p style="margin:0 0 12px;">${escapeHtml(greeting)}</p>
+          <p style="margin:0 0 4px;">
+            Este es su reporte ${escapeHtml(input.frequencyLabel.toLowerCase())} del sistema de
+            Farmacovigilancia de Cannabis Medicinal.
+          </p>
+          <p style="margin:0 0 8px;color:#666666;font-size:13px;">
+            Período: ${escapeHtml(input.periodLabel)} · Reportes del período: ${escapeHtml(reports)}
+          </p>${chartsHtml}
+          <p style="margin:24px 0 20px;"></p>
+          ${button(url, "Ver el dashboard del período")}
+          <p style="margin:0;color:#666666;font-size:13px;">
+            Puede cambiar la frecuencia o los gráficos incluidos desde «Reportes periódicos».
+          </p>`);
+
+  return { to: input.to, subject, text, html };
+}
