@@ -2,6 +2,7 @@ import {
   ANALYTICS_CHART_LABELS,
   ANALYTICS_UNIT_LABELS,
   PERIODIC_FREQUENCY_LABELS,
+  analyticsFiltersToQuery,
   type AnalyticsFilters,
 } from "@canmedseg/shared";
 import type { FastifyBaseLogger } from "fastify";
@@ -9,6 +10,8 @@ import type { Pool } from "pg";
 
 import { getDashboard } from "../analytics/analyticsRepository";
 import { config } from "../config";
+import { sendEmail } from "../email/mailer";
+import { periodicReportEmail, type PeriodicReportChart } from "../email/templates";
 import {
   claimDelivery,
   listDueRecipients,
@@ -20,21 +23,28 @@ import {
 /**
  * Reportes periódicos automáticos (RF-8.3, RF-8.12, RF-8.14).
  *
- * El armado del contenido está resuelto acá: se calculan los gráficos elegidos
- * por cada investigador sobre el período que le corresponde. El transporte de
- * correo llega en Semana 8; hasta entonces `deliver` deja el resumen en el log
- * y el envío queda registrado igual, con su período y su resultado.
+ * Para cada investigador se calculan los gráficos que eligió sobre el período
+ * que le corresponde y se le envían por correo. Cada envío queda registrado con
+ * su período y su resultado.
  */
 
 export type PeriodicReportContent = {
   recipient: PendingRecipient;
+  filters: AnalyticsFilters;
   periodLabel: string;
   reportCount: number;
-  charts: { label: string; unit: string; total: number; top: string }[];
+  charts: PeriodicReportChart[];
 };
+
+/** Categorías por gráfico que se listan en el correo; el resto queda en el dashboard. */
+const ROWS_PER_CHART = 5;
 
 function isoDay(date: Date): string {
   return date.toISOString().slice(0, 10);
+}
+
+function displayDay(date: Date): string {
+  return isoDay(date).split("-").reverse().join("/");
 }
 
 export async function buildPeriodicReport(
@@ -52,41 +62,52 @@ export async function buildPeriodicReport(
 
   const charts = dashboard.series
     .filter((series) => selected.has(series.chart))
-    .map((series) => {
-      const top = [...series.slices].sort((a, b) => b.value - a.value)[0];
-      return {
-        label: ANALYTICS_CHART_LABELS[series.chart],
-        unit: ANALYTICS_UNIT_LABELS[series.unit],
-        total: series.total,
-        top: top && top.value > 0 ? `${top.label} (${top.percentage} %)` : "sin datos",
-      };
-    });
+    .map((series) => ({
+      label: ANALYTICS_CHART_LABELS[series.chart],
+      unit: ANALYTICS_UNIT_LABELS[series.unit],
+      total: series.total,
+      rows: series.slices
+        .filter((slice) => slice.value > 0)
+        .sort((a, b) => b.value - a.value)
+        .slice(0, ROWS_PER_CHART)
+        .map(({ label, value, percentage }) => ({ label, value, percentage })),
+    }));
 
   return {
     recipient,
-    periodLabel: `${isoDay(recipient.period.start)} a ${isoDay(recipient.period.end)}`,
+    filters,
+    periodLabel: `${displayDay(recipient.period.start)} al ${displayDay(recipient.period.end)}`,
     reportCount: dashboard.headline.totalReports,
     charts,
   };
 }
 
-/** Punto de integración del correo. Semana 8 reemplaza el cuerpo por el envío real. */
 async function deliver(
   log: FastifyBaseLogger,
   content: PeriodicReportContent,
 ): Promise<void> {
-  if (!content.recipient.email) {
+  const { recipient } = content;
+  if (!recipient.email) {
     throw new Error("El investigador no tiene correo electrónico registrado");
   }
+  const dashboardUrl = new URL("/dashboard", config.WEB_BASE_URL);
+  for (const [key, value] of Object.entries(analyticsFiltersToQuery(content.filters))) {
+    dashboardUrl.searchParams.set(key, value);
+  }
+  await sendEmail(
+    periodicReportEmail({
+      to: recipient.email,
+      name: recipient.displayName,
+      frequencyLabel: PERIODIC_FREQUENCY_LABELS[recipient.frequency],
+      periodLabel: content.periodLabel,
+      reportCount: content.reportCount,
+      charts: content.charts,
+      dashboardUrl: dashboardUrl.toString(),
+    }),
+  );
   log.info(
-    {
-      to: content.recipient.email,
-      frecuencia: PERIODIC_FREQUENCY_LABELS[content.recipient.frequency],
-      periodo: content.periodLabel,
-      reportes: content.reportCount,
-      graficos: content.charts.map((chart) => chart.label),
-    },
-    "Reporte periódico listo para enviar",
+    { to: recipient.email, periodo: content.periodLabel, reportes: content.reportCount },
+    "Reporte periódico enviado",
   );
 }
 

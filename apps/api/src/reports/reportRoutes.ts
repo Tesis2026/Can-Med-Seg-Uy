@@ -15,7 +15,6 @@ import { z } from "zod";
 import { CaptchaError, consumeVerificationToken } from "../captcha/captchaRepository";
 import { pool } from "../database/pool";
 import { requirePermission } from "../auth/guards";
-import { notifyInvestigatorsNewReportStub } from "../notifications/investigatorNotify";
 import {
   DraftNotFoundError,
   createDraft,
@@ -93,7 +92,6 @@ export const reportRoutes: FastifyPluginAsync = async (app) => {
         user?.id ?? null,
         user ? (draftId ?? null) : null,
       );
-      notifyInvestigatorsNewReportStub(request.log, report, created.id);
       return reply.code(201).send(created);
     } catch (error) {
       if (error instanceof DraftNotFoundError) {

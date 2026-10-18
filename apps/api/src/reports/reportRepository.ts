@@ -68,6 +68,7 @@ export const SUBMITTED_COLUMNS = [
   "patient_birth_date",
   "patient_age_at_event_start",
   "patient_country_of_event_start",
+  "patient_department",
   "adverse_event_description",
   "severity_grade",
   "previous_diseases",
@@ -95,6 +96,7 @@ export function submittedValues(report: SubmitAdverseEventReport): unknown[] {
     report.patient.birthDate,
     report.patient.ageAtEventStart,
     report.patient.countryOfEventStart,
+    report.patient.department ?? null,
     report.adverseEventDescription,
     report.severityGrade ?? null,
     report.previousDiseases || null,
@@ -220,8 +222,9 @@ export class DraftNotFoundError extends Error {
 }
 
 /**
- * Envío del reporte (RF-3, RF-5.1). Si viene de un borrador propio, se
- * transiciona esa misma fila `en_progreso → en_revision` en vez de duplicarla,
+ * Envío del reporte (RF-3). Lo cargan investigadores, así que queda aprobado
+ * para análisis igual que los importados. Si viene de un borrador propio, se
+ * transiciona esa misma fila `en_progreso → aprobado_local` en vez de duplicarla,
  * de modo que el id que vio el notificador sigue siendo el del reporte.
  */
 export async function createReport(
@@ -233,7 +236,7 @@ export async function createReport(
   draftId: string | null = null,
 ): Promise<CreatedReport> {
   const client = await pool.connect();
-  const report = { ...input, status: ReportStatus.EnRevision, currentStep: 5 };
+  const report = { ...input, status: ReportStatus.AprobadoLocal, currentStep: 5 };
   const values = submittedValues(report);
 
   try {
@@ -247,7 +250,7 @@ export async function createReport(
       ).join(", ");
       const updated = await client.query<ReportRow>(
         `UPDATE reports
-            SET status = 'en_revision',
+            SET status = 'aprobado_local',
                 submitted_at = now(),
                 updated_at = now(),
                 current_step = 5,
@@ -265,7 +268,7 @@ export async function createReport(
         `INSERT INTO reports (
           status, submitted_at, current_step, notifier_user_id, ${SUBMITTED_COLUMNS.join(", ")}
         ) VALUES (
-          'en_revision', now(), 5, $1, ${placeholders}
+          'aprobado_local', now(), 5, $1, ${placeholders}
         ) RETURNING id, status, form_data, created_at, submitted_at`,
         [notifierUserId, ...values],
       );

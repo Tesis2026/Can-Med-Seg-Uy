@@ -77,9 +77,10 @@ usa su API HTTP porque el plan gratuito de Render bloquea los puertos SMTP. Sin
 `BREVO_API_KEY` ni `SMTP_HOST`, los emails se escriben en el log de la API.
 
 - **Desactivar** impide el ingreso y cierra las sesiones abiertas del usuario.
-- **Borrar** elimina la cuenta y **todos sus datos**: reportes enviados, formularios en
-  progreso, roles y sesiones. Las revisiones que hizo sobre reportes de otros se
-  conservan, sin revisor asignado.
+- **Borrar** elimina la cuenta, sus formularios en progreso, roles y sesiones. Los
+  reportes que cargó o importó **se conservan** sin usuario asociado y siguen en el
+  dashboard y la exportación, igual que el registro de sus exportaciones y las
+  revisiones que hizo.
 
 El primer administrador se crea por consola:
 
