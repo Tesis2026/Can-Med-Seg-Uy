@@ -48,9 +48,9 @@ export const importRoutes: FastifyPluginAsync = async app => {
           if (!id) { result.skipped++; continue; }
           await replaceNestedRows(client, id, row.report);
           await client.query(
-            `INSERT INTO report_import_details (report_id, imported_by, filename, file_sha256, source_data, warnings)
-             VALUES ($1, $2, $3, $4, $5, $6)`,
-            [id, request.auth.user!.id, filename, createHash('sha256').update(buffer).digest('hex'), JSON.stringify(row.sourceData), JSON.stringify(row.warnings)],
+            `INSERT INTO report_import_details (report_id, filename, file_sha256, source_data, warnings)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [id, filename, createHash('sha256').update(buffer).digest('hex'), JSON.stringify(row.sourceData), JSON.stringify(row.warnings)],
           );
           result.ids.push(id);
           result.imported++;

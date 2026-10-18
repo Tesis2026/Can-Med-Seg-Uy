@@ -43,11 +43,11 @@ const NOTIFIER_PERMISSIONS: readonly Permission[] = [
 /**
  * MSP (validador) tiene la misma superficie que Investigador por ahora
  * (rol separado para la transferencia institucional — plan-arquitectura.md).
+ * Sin `ReportReview`: la bandeja de revisión no forma parte del flujo vigente.
  */
 const REVIEWER_PERMISSIONS: readonly Permission[] = [
   Permission.ReportImport,
   ...NOTIFIER_PERMISSIONS,
-  Permission.ReportReview,
   Permission.DashboardRead,
   Permission.ExportRead,
   Permission.PeriodicReportsReceive,
