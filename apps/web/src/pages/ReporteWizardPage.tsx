@@ -268,13 +268,6 @@ function ReporteWizard({ ownerId }: { ownerId: string | null }) {
           onNext={handleNext}
           onSubmit={handleSubmitClick}
           submitDisabled={!session.authenticated && !captchaToken}
-          emailReceipt={draft.contact.sendEmailReceipt}
-          onEmailReceiptChange={(sendEmailReceipt) =>
-            updateDraft((prev) => ({
-              ...prev,
-              contact: { ...prev.contact, sendEmailReceipt },
-            }))
-          }
         />
 
         <DraftStatus

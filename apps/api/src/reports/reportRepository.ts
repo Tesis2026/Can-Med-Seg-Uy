@@ -70,7 +70,6 @@ export const SUBMITTED_COLUMNS = [
   "patient_country_of_event_start",
   "patient_department",
   "adverse_event_description",
-  "severity_grade",
   "previous_diseases",
   "has_concomitant_treatments",
   "additional_comments",
@@ -82,7 +81,6 @@ export const SUBMITTED_COLUMNS = [
   "contact_health_facility",
   "contact_email",
   "contact_phone",
-  "send_email_receipt",
   "form_data",
 ] as const;
 
@@ -98,7 +96,6 @@ export function submittedValues(report: SubmitAdverseEventReport): unknown[] {
     report.patient.countryOfEventStart,
     report.patient.department ?? null,
     report.adverseEventDescription,
-    report.severityGrade ?? null,
     report.previousDiseases || null,
     report.hasConcomitantTreatments ?? null,
     report.additionalComments || null,
@@ -110,7 +107,6 @@ export function submittedValues(report: SubmitAdverseEventReport): unknown[] {
     report.contact.healthFacility || null,
     report.contact.email,
     report.contact.phone,
-    report.contact.sendEmailReceipt,
     JSON.stringify(report),
   ];
 }

@@ -33,7 +33,7 @@ export function InicioPage() {
   }
 
   const permissions: readonly PermissionValue[] = session.permissions;
-  const puedeRevisar = hasPermission(permissions, Permission.ReportReview);
+  const puedeAnalizar = hasPermission(permissions, Permission.DashboardRead);
   const esAdmin = hasPermission(permissions, Permission.UsersManage);
   const roles = visibleRoles(user.roles.map((entry) => entry.role));
 
@@ -54,10 +54,10 @@ export function InicioPage() {
       </section>
 
       {/* Resumen operativo temporalmente deshabilitado junto con la bandeja de revisión.
-      {puedeRevisar ? <ResumenOperativo /> : <EstadisticasDelSistema />}
+      {puedeAnalizar ? <ResumenOperativo /> : <EstadisticasDelSistema />}
       */}
       {/* Se ocultan las estadísticas del sistema para el administrador. */}
-      {!puedeRevisar && !esAdmin ? <EstadisticasDelSistema /> : null}
+      {!puedeAnalizar && !esAdmin ? <EstadisticasDelSistema /> : null}
 
       {hasPermission(permissions, Permission.UsersManage) ? (
         <>
