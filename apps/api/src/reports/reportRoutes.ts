@@ -35,7 +35,7 @@ import {
   applyReviewCorrections,
   classifyReport,
   getReviewReport,
-  listMspPending,
+  // Envío MSP deshabilitado — listMspPending retenido en reviewRepository.
   listReviewQueue,
 } from "./reviewRepository";
 
@@ -204,10 +204,16 @@ export const reportRoutes: FastifyPluginAsync = async (app) => {
     async (_request, reply) => reply.send(await listReviewQueue(pool)),
   );
 
+  /*
+   * Envío al MSP — deshabilitado. Ruta anterior (no borrar; revertir si vuelve):
+   * app.get("/reports/msp-pending", { preHandler: requirePermission(Permission.ReportReview) },
+   *   async (_request, reply) => reply.send(await listMspPending(pool)));
+   */
   app.get(
     "/reports/msp-pending",
     { preHandler: requirePermission(Permission.ReportReview) },
-    async (_request, reply) => reply.send(await listMspPending(pool)),
+    async (_request, reply) =>
+      reply.code(410).send({ message: "El envío al MSP está desactivado." }),
   );
 
   app.get(

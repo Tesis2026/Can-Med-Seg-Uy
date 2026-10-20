@@ -11,7 +11,8 @@ import {
 } from "@canmedseg/shared";
 import type { Pool, PoolClient } from "pg";
 
-import { enqueueMspDelivery } from "../msp/mspOutbox";
+// Envío MSP deshabilitado — outbox retenido para revertir.
+// import { enqueueMspDelivery } from "../msp/mspOutbox";
 
 type ReportRow = {
   id: string;
@@ -253,7 +254,8 @@ export async function applyReviewCorrections(
 
 /**
  * Clasifica un reporte (RF-5.3). Estados terminales no admiten nueva transición
- * (RF-5.6). El envío MSP queda en outbox stub → `aprobado_msp`.
+ * (RF-5.6). Envío MSP deshabilitado: `enviar_msp` lo corta Zod; el case queda
+ * comentado por reversibilidad.
  */
 export async function classifyReport(
   pool: Pool,
@@ -280,9 +282,12 @@ export async function classifyReport(
       case "rechazado":
         newStatus = ReportStatus.Rechazado;
         break;
-      case "enviar_msp":
-        newStatus = ReportStatus.AprobadoMsp;
-        break;
+      // Envío MSP deshabilitado:
+      // case "enviar_msp":
+      //   newStatus = ReportStatus.AprobadoMsp;
+      //   break;
+      default:
+        throw new Error(`Decisión de clasificación no admitida: ${input.decision}`);
     }
 
     if (TERMINAL_STATUSES.has(row.status) && row.status !== ReportStatus.EnRevision) {
@@ -314,9 +319,10 @@ export async function classifyReport(
 
     if (!updatedRow.rows[0]) throw new ReportNotReviewableError();
 
-    if (input.decision === "enviar_msp") {
-      await enqueueMspDelivery(client, reportId, updated);
-    }
+    // Envío MSP deshabilitado:
+    // if (input.decision === "enviar_msp") {
+    //   await enqueueMspDelivery(client, reportId, updated);
+    // }
 
     await insertReviewEvent(client, {
       reportId,

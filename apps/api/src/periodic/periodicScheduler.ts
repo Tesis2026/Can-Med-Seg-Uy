@@ -24,8 +24,8 @@ import {
  * Reportes periódicos automáticos (RF-8.3, RF-8.12, RF-8.14).
  *
  * Para cada investigador se calculan los gráficos que eligió sobre el período
- * que le corresponde y se le envían por correo. Cada envío queda registrado con
- * su período y su resultado.
+ * que le corresponde y se le envían por correo (Brevo). Cada envío queda
+ * registrado con su período y su resultado.
  */
 
 export type PeriodicReportContent = {

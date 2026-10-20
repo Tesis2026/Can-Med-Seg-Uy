@@ -72,9 +72,9 @@ invalida. Se implementa con el plugin
 de better-auth (tabla `app_invitations`).
 
 Para que los emails lleguen en producción, definí `BREVO_API_KEY` (plan gratuito de
-[Brevo](https://www.brevo.com)) y un `EMAIL_FROM` con un remitente verificado en Brevo. Se
-usa su API HTTP porque el plan gratuito de Render bloquea los puertos SMTP. Sin
-`BREVO_API_KEY` ni `SMTP_HOST`, los emails se escriben en el log de la API.
+[Brevo](https://www.brevo.com)) y un `EMAIL_FROM` con un remitente verificado en Brevo.
+Se usa su API HTTP porque el plan gratuito de Render bloquea los puertos SMTP. Sin
+`BREVO_API_KEY`, los emails se escriben en el log de la API.
 
 - **Desactivar** impide el ingreso y cierra las sesiones abiertas del usuario.
 - **Borrar** elimina la cuenta, sus formularios en progreso, roles y sesiones. Los
@@ -101,20 +101,9 @@ Desde el login, «¿Olvidó su contraseña?» envía un enlace de un solo uso qu
 Las cuentas desactivadas no reciben el enlace, y la respuesta es la misma exista o no
 el email.
 
-Los mails salen por **SMTP** (nodemailer). Sin `SMTP_HOST` en el `.env` no se envían:
-se escriben en el log de la API con el enlace, útil para desarrollo. Para enviarlos de
-verdad sirve cualquier SMTP gratuito, por ejemplo Gmail con una
-[contraseña de aplicación](https://support.google.com/accounts/answer/185833):
-
-```dotenv
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=cuenta@gmail.com
-SMTP_PASS=contraseña-de-aplicacion
-EMAIL_FROM=Farmacovigilancia MSP <cuenta@gmail.com>
-```
-
-Los pedidos de enlace están limitados a 3 por minuto por IP.
+`WEB_BASE_URL` arma los links de `/restablecer-contrasena` y de las invitaciones. Los
+pedidos de enlace de recuperación están limitados a 3 por minuto por IP. Detalle de
+Brevo: `documentacion/configurar-envio-de-mails.md`.
 
 ### Registro con GUB UY: deprecado momentáneamente
 

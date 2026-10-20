@@ -25,7 +25,7 @@ function getZodIssues(error: unknown): unknown[] | null {
 }
 
 export async function buildApp() {
-  const app = Fastify({ logger: true });
+  const app = Fastify({ logger: config.NODE_ENV !== "test" });
   await app.register(cors, {
     origin: config.CORS_ORIGIN.split(",").map((origin) => origin.trim()),
     credentials: true,
@@ -73,7 +73,8 @@ export async function buildApp() {
   }
 
   app.addHook("onClose", async () => {
-    await pool.end();
+    // En tests el pool se cierra una sola vez al final del suite.
+    if (config.NODE_ENV !== "test") await pool.end();
   });
   return app;
 }
