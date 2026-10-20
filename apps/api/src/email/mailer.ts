@@ -1,5 +1,3 @@
-import nodemailer, { type Transporter } from "nodemailer";
-
 import { config } from "../config";
 
 export type EmailMessage = {
@@ -9,45 +7,67 @@ export type EmailMessage = {
   html: string;
 };
 
-const smtpHost = config.SMTP_HOST?.trim();
-
-let transporter: Transporter | null = null;
-
-function getTransporter(): Transporter {
-  if (!transporter) {
-    const user = config.SMTP_USER?.trim();
-    transporter = nodemailer.createTransport({
-      host: smtpHost,
-      port: config.SMTP_PORT,
-      secure: config.SMTP_SECURE,
-      auth: user ? { user, pass: config.SMTP_PASS ?? "" } : undefined,
-    });
-  }
-  return transporter;
+function brevoApiKey(): string | undefined {
+  return config.BREVO_API_KEY?.trim() || undefined;
 }
 
-export const isEmailDeliveryConfigured = Boolean(smtpHost);
+/** Parsea `Nombre <correo@dominio>` o un email suelto. */
+export function parseFromAddress(from: string): { name?: string; email: string } {
+  const match = from.match(/^\s*(.*?)\s*<([^>]+)>\s*$/);
+  if (match) {
+    const name = match[1].replace(/^["']|["']$/g, "").trim();
+    return { name: name || undefined, email: match[2].trim() };
+  }
+  return { email: from.trim() };
+}
 
+export function isEmailDeliveryConfigured(): boolean {
+  return Boolean(brevoApiKey());
+}
+
+function logEmailInsteadOfSending(message: EmailMessage): void {
+  console.info(
+    [
+      "──── Email (sin BREVO_API_KEY: no se envía) ────",
+      `Para: ${message.to}`,
+      `Asunto: ${message.subject}`,
+      "",
+      message.text,
+      "──────────────────────────────────────────────────",
+    ].join("\n"),
+  );
+}
+
+/**
+ * Envío por la API HTTP de Brevo. Sin `BREVO_API_KEY`, solo escribe el mail en el log
+ * (útil en local y en tests).
+ */
 export async function sendEmail(message: EmailMessage): Promise<void> {
-  if (!smtpHost) {
-    console.info(
-      [
-        "──── Email (SMTP sin configurar: no se envía) ────",
-        `Para: ${message.to}`,
-        `Asunto: ${message.subject}`,
-        "",
-        message.text,
-        "──────────────────────────────────────────────────",
-      ].join("\n"),
-    );
+  const apiKey = brevoApiKey();
+  if (!apiKey) {
+    logEmailInsteadOfSending(message);
     return;
   }
 
-  await getTransporter().sendMail({
-    from: config.EMAIL_FROM,
-    to: message.to,
-    subject: message.subject,
-    text: message.text,
-    html: message.html,
+  const sender = parseFromAddress(config.EMAIL_FROM);
+  const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+    method: "POST",
+    headers: {
+      accept: "application/json",
+      "content-type": "application/json",
+      "api-key": apiKey,
+    },
+    body: JSON.stringify({
+      sender: sender.name ? { name: sender.name, email: sender.email } : { email: sender.email },
+      to: [{ email: message.to }],
+      subject: message.subject,
+      htmlContent: message.html,
+      textContent: message.text,
+    }),
   });
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`Brevo respondió ${response.status}: ${detail}`);
+  }
 }

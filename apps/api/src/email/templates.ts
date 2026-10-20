@@ -77,3 +77,83 @@ export function passwordResetEmail(input: {
 
   return { to: input.to, subject, text, html };
 }
+
+export function periodicReportEmail(input: {
+  to: string;
+  displayName: string;
+  frequencyLabel: string;
+  periodLabel: string;
+  reportCount: number;
+  charts: { label: string; unit: string; total: number; top: string }[];
+}): EmailMessage {
+  const greeting = input.displayName ? `Hola ${input.displayName}:` : "Hola:";
+  const subject = `Reporte periódico (${input.frequencyLabel}) — Farmacovigilancia MSP`;
+
+  const chartLines = input.charts.map(
+    (chart) =>
+      `- ${chart.label}: ${chart.total} ${chart.unit}` +
+      (chart.top !== "sin datos" ? ` (más frecuente: ${chart.top})` : ""),
+  );
+
+  const text = [
+    greeting,
+    "",
+    `Adjunto el resumen ${input.frequencyLabel.toLowerCase()} del sistema de`,
+    "Farmacovigilancia de Cannabis Medicinal del Ministerio de Salud Pública.",
+    "",
+    `Período: ${input.periodLabel}`,
+    `Reportes en el período: ${input.reportCount}`,
+    "",
+    "Indicadores:",
+    ...(chartLines.length > 0 ? chartLines : ["- (sin gráficos seleccionados)"]),
+    "",
+    "Farmacovigilancia - Ministerio de Salud Pública",
+  ].join("\n");
+
+  const chartHtml =
+    input.charts.length > 0
+      ? `<ul style="margin:0 0 16px;padding-left:20px;">${input.charts
+          .map(
+            (chart) =>
+              `<li style="margin:0 0 6px;"><strong>${escapeHtml(chart.label)}</strong>: ${chart.total} ${escapeHtml(chart.unit)}${
+                chart.top !== "sin datos"
+                  ? ` (más frecuente: ${escapeHtml(chart.top)})`
+                  : ""
+              }</li>`,
+          )
+          .join("")}</ul>`
+      : `<p style="margin:0 0 16px;color:#666666;">Sin gráficos seleccionados.</p>`;
+
+  const html = `<!doctype html>
+<html lang="es">
+  <body style="margin:0;padding:24px;background:#ebebeb;font-family:Inter,Segoe UI,Arial,sans-serif;color:#222222;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;margin:0 auto;background:#ffffff;">
+      <tr>
+        <td style="background:#1a4a8c;color:#ffffff;padding:16px 24px;font-size:14px;font-weight:600;">
+          Ministerio de Salud Pública
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:28px 24px;font-size:14px;line-height:1.55;">
+          <p style="margin:0 0 12px;">${escapeHtml(greeting)}</p>
+          <p style="margin:0 0 16px;">
+            Resumen ${escapeHtml(input.frequencyLabel.toLowerCase())} del sistema de
+            Farmacovigilancia de Cannabis Medicinal.
+          </p>
+          <p style="margin:0 0 8px;"><strong>Período:</strong> ${escapeHtml(input.periodLabel)}</p>
+          <p style="margin:0 0 16px;"><strong>Reportes en el período:</strong> ${input.reportCount}</p>
+          <p style="margin:0 0 8px;font-weight:600;">Indicadores</p>
+          ${chartHtml}
+        </td>
+      </tr>
+      <tr>
+        <td style="background:#e0e0e0;color:#666666;padding:12px 24px;font-size:12px;text-align:center;">
+          Farmacovigilancia - Ministerio de Salud Pública
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+
+  return { to: input.to, subject, text, html };
+}

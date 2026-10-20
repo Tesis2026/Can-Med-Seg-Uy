@@ -82,20 +82,22 @@ Desde el login, «¿Olvidó su contraseña?» envía un enlace de un solo uso qu
 Las cuentas desactivadas no reciben el enlace, y la respuesta es la misma exista o no
 el email.
 
-Los mails salen por **SMTP** (nodemailer). Sin `SMTP_HOST` en el `.env` no se envían:
-se escriben en el log de la API con el enlace, útil para desarrollo. Para enviarlos de
-verdad sirve cualquier SMTP gratuito, por ejemplo Gmail con una
-[contraseña de aplicación](https://support.google.com/accounts/answer/185833):
+Los mails (recuperación de contraseña y reportes periódicos) salen por la API HTTP de
+[Brevo](https://www.brevo.com). Sin `BREVO_API_KEY`, el mail completo (con el enlace) se
+escribe en el **log de la API**, útil en local.
 
 ```dotenv
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=cuenta@gmail.com
-SMTP_PASS=contraseña-de-aplicacion
-EMAIL_FROM=Farmacovigilancia MSP <cuenta@gmail.com>
+BREVO_API_KEY=xkeysib-…
+EMAIL_FROM=Farmacovigilancia MSP <remitente-verificado@ejemplo.com>
+WEB_BASE_URL=https://tu-app.vercel.app
 ```
 
-Los pedidos de enlace están limitados a 3 por minuto por IP.
+Pasos: verificar el remitente, generar una **API key** (`xkeysib-…`, no la SMTP key
+`xsmtpsib-…`), desactivar el bloqueo por IP en Security → Authorized IPs, cargar las
+variables y redesplegar la API. Guía: `documentacion/configurar-envio-de-mails.md`.
+
+`WEB_BASE_URL` arma el link de `/restablecer-contrasena`. Los pedidos de enlace están
+limitados a 3 por minuto por IP.
 
 ### Registro con GUB UY: deprecado momentáneamente
 
