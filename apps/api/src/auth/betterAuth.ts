@@ -50,7 +50,7 @@ export const auth = betterAuth({
     sendResetPassword: sendPasswordResetEmail,
   },
   rateLimit: {
-    enabled: true,
+    enabled: config.NODE_ENV !== "test",
     window: 60,
     max: 100,
     customRules: {

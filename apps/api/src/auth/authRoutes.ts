@@ -151,18 +151,24 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
     const cookies: string[] = [];
 
     if (request.auth.source === "better-auth") {
-      const response = await auth.api.signOut({
-        headers: fromNodeHeaders(request.headers),
-        asResponse: true,
-      });
-      cookies.push(...response.headers.getSetCookie());
+      try {
+        const response = await auth.api.signOut({
+          headers: fromNodeHeaders(request.headers),
+          asResponse: true,
+        });
+        cookies.push(...response.headers.getSetCookie());
+      } catch {
+        // Si falla el signOut de better-auth, igual limpiamos la cookie legacy.
+      }
     }
 
     // Registro con GUB UY: deprecado momentáneamente.
     if (request.auth.token) await revokeSession(pool, request.auth.token);
     cookies.push(clearedSessionCookie());
 
-    reply.header("set-cookie", cookies);
+    if (cookies.length > 0) {
+      reply.header("set-cookie", cookies.length === 1 ? cookies[0]! : cookies);
+    }
     return reply.send(anonymousSession());
   });
 

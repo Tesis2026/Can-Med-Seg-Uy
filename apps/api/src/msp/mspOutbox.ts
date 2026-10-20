@@ -3,6 +3,9 @@ import type { Pool, PoolClient } from "pg";
 /**
  * Stub del canal MSP (Semana 5). La generación E2B y el envío real van en Semana 8.
  * Por ahora encola el reporte y deja el estado `aprobado_msp` (RF-5.4 / RF-5.7).
+ *
+ * Envío al MSP — deshabilitado en la API/UI. Este módulo se retiene sin llamadores
+ * activos para poder revertir sin reescribir el outbox.
  */
 export async function enqueueMspDelivery(
   client: PoolClient,
