@@ -59,7 +59,7 @@ function metadata(row: ReportRow): CreatedReport {
  * Columnas desnormalizadas del reporte enviado. `form_data` guarda el borrador
  * completo; estas columnas son las que consultan los listados y el dashboard.
  */
-const SUBMITTED_COLUMNS = [
+export const SUBMITTED_COLUMNS = [
   "patient_initials",
   "patient_national_id",
   "patient_sex",
@@ -68,8 +68,8 @@ const SUBMITTED_COLUMNS = [
   "patient_birth_date",
   "patient_age_at_event_start",
   "patient_country_of_event_start",
+  "patient_department",
   "adverse_event_description",
-  "severity_grade",
   "previous_diseases",
   "has_concomitant_treatments",
   "additional_comments",
@@ -81,11 +81,10 @@ const SUBMITTED_COLUMNS = [
   "contact_health_facility",
   "contact_email",
   "contact_phone",
-  "send_email_receipt",
   "form_data",
 ] as const;
 
-function submittedValues(report: SubmitAdverseEventReport): unknown[] {
+export function submittedValues(report: SubmitAdverseEventReport): unknown[] {
   return [
     report.patient.initials,
     report.patient.nationalId || null,
@@ -95,8 +94,8 @@ function submittedValues(report: SubmitAdverseEventReport): unknown[] {
     report.patient.birthDate,
     report.patient.ageAtEventStart,
     report.patient.countryOfEventStart,
+    report.patient.department ?? null,
     report.adverseEventDescription,
-    report.severityGrade ?? null,
     report.previousDiseases || null,
     report.hasConcomitantTreatments ?? null,
     report.additionalComments || null,
@@ -108,7 +107,6 @@ function submittedValues(report: SubmitAdverseEventReport): unknown[] {
     report.contact.healthFacility || null,
     report.contact.email,
     report.contact.phone,
-    report.contact.sendEmailReceipt,
     JSON.stringify(report),
   ];
 }
@@ -198,7 +196,7 @@ async function insertConcomitants(
   }
 }
 
-async function replaceNestedRows(
+export async function replaceNestedRows(
   client: PoolClient,
   reportId: string,
   report: SubmitAdverseEventReport,
@@ -220,8 +218,9 @@ export class DraftNotFoundError extends Error {
 }
 
 /**
- * Envío del reporte (RF-3, RF-5.1). Si viene de un borrador propio, se
- * transiciona esa misma fila `en_progreso → en_revision` en vez de duplicarla,
+ * Envío del reporte (RF-3). Lo cargan investigadores, así que queda aprobado
+ * para análisis igual que los importados. Si viene de un borrador propio, se
+ * transiciona esa misma fila `en_progreso → aprobado_local` en vez de duplicarla,
  * de modo que el id que vio el notificador sigue siendo el del reporte.
  */
 export async function createReport(
@@ -233,7 +232,7 @@ export async function createReport(
   draftId: string | null = null,
 ): Promise<CreatedReport> {
   const client = await pool.connect();
-  const report = { ...input, status: ReportStatus.EnRevision, currentStep: 5 };
+  const report = { ...input, status: ReportStatus.AprobadoLocal, currentStep: 5 };
   const values = submittedValues(report);
 
   try {
@@ -247,7 +246,7 @@ export async function createReport(
       ).join(", ");
       const updated = await client.query<ReportRow>(
         `UPDATE reports
-            SET status = 'en_revision',
+            SET status = 'aprobado_local',
                 submitted_at = now(),
                 updated_at = now(),
                 current_step = 5,
@@ -265,7 +264,7 @@ export async function createReport(
         `INSERT INTO reports (
           status, submitted_at, current_step, notifier_user_id, ${SUBMITTED_COLUMNS.join(", ")}
         ) VALUES (
-          'en_revision', now(), 5, $1, ${placeholders}
+          'aprobado_local', now(), 5, $1, ${placeholders}
         ) RETURNING id, status, form_data, created_at, submitted_at`,
         [notifierUserId, ...values],
       );
@@ -304,7 +303,13 @@ export async function getReport(
   );
   const row = result.rows[0];
   if (!row) return null;
+  const imported = await pool.query<{ external_report_id: string; filename: string; warnings: string[]; source_data: NonNullable<ReportDetail['importDetails']>['sourceData'] }>(
+    `SELECT r.external_report_id, i.filename, i.warnings, i.source_data
+       FROM reports r JOIN report_import_details i ON i.report_id = r.id WHERE r.id = $1`, [id],
+  );
+  const source = imported.rows[0];
   return {
+    importDetails: source ? { externalId: source.external_report_id, filename: source.filename, warnings: source.warnings, sourceData: source.source_data } : undefined,
     id: row.id,
     status: row.status,
     createdAt: row.created_at.toISOString(),
@@ -446,6 +451,17 @@ export async function deleteDraft(pool: Pool, id: string, userId: string): Promi
 /* ------------------------------------------------------------------ *
  * Historial propio (RF-6).
  * ------------------------------------------------------------------ */
+
+/** Elimina un reporte enviado del historial, solo si pertenece al usuario. */
+export async function deleteOwnReport(pool: Pool, id: string, userId: string): Promise<boolean> {
+  const result = await pool.query(
+    `DELETE FROM reports
+      WHERE id = $1 AND notifier_user_id = $2
+        AND status NOT IN ('en_progreso', 'rechazado')`,
+    [id, userId],
+  );
+  return (result.rowCount ?? 0) > 0;
+}
 
 export async function listOwnReports(pool: Pool, userId: string): Promise<ReportHistoryItem[]> {
   const result = await pool.query<HistoryRow>(

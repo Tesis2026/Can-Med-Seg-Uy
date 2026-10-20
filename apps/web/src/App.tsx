@@ -9,15 +9,15 @@ import { FormulariosEnProgresoPage } from "./pages/FormulariosEnProgresoPage";
 import { GestionUsuariosPage } from "./pages/GestionUsuariosPage";
 import { HistorialPage } from "./pages/HistorialPage";
 import { InicioPage } from "./pages/InicioPage";
+import { ImportarReportesPage } from "./pages/ImportarReportesPage";
 import { LandingPage } from "./pages/LandingPage";
 import { LoginPage } from "./pages/LoginPage";
 import { OlvideContrasenaPage } from "./pages/OlvideContrasenaPage";
 import { ReporteExitoPage } from "./pages/ReporteExitoPage";
+import { RegistroPage } from "./pages/RegistroPage";
 import { ReporteWizardPage } from "./pages/ReporteWizardPage";
 import { ReportesPeriodicosPage } from "./pages/ReportesPeriodicosPage";
 import { RestablecerContrasenaPage } from "./pages/RestablecerContrasenaPage";
-import { RevisionDetallePage } from "./pages/RevisionDetallePage";
-import { RevisionPage } from "./pages/RevisionPage";
 
 /**
  * La raíz es la landing institucional para quien no inició sesión y la home
@@ -44,18 +44,19 @@ export function App() {
         <Route path="login" element={<LoginPage />} />
         <Route path="olvide-contrasena" element={<OlvideContrasenaPage />} />
         <Route path="restablecer-contrasena" element={<RestablecerContrasenaPage />} />
+        <Route path="registro/:id" element={<RegistroPage />} />
         <Route path="reporte" element={<ReporteWizardPage />} />
         <Route path="reporte/exito" element={<ReporteExitoPage />} />
         {/* RF-4.5 y RF-6: solo con sesión; cada página redirige al login. */}
         <Route path="formularios-en-progreso" element={<FormulariosEnProgresoPage />} />
         <Route path="historial" element={<HistorialPage />} />
         <Route path="historial/:id" element={<DetalleReportePage />} />
-        {/* RF-5: bandeja y detalle de revisión (investigador / MSP). */}
-        <Route path="revision" element={<RevisionPage />} />
-        <Route path="revision/:id" element={<RevisionDetallePage />} />
+        {/* Ruta retirada: bloquear el acceso directo y rutas antiguas de revisión. */}
+        <Route path="revision/*" element={<Navigate to="/" replace />} />
         {/* RF-7 y RF-8: dashboard, exportación y reportes periódicos. */}
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="exportaciones" element={<ExportacionesPage />} />
+        <Route path="importar-reportes" element={<ImportarReportesPage />} />
         <Route path="reportes-periodicos" element={<ReportesPeriodicosPage />} />
         <Route path="admin/usuarios" element={<GestionUsuariosPage />} />
       </Route>

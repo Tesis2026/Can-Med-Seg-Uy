@@ -2,21 +2,17 @@ import {
   ACCESS_FORM_LABELS,
   ACTION_TAKEN_LABELS,
   ADMINISTRATION_ROUTE_LABELS,
-  CAUSALITY_LABELS,
   EVENT_OUTCOME_LABELS,
   INDICATION_LABELS,
   PRESENTATION_LABELS,
   PROFESSION_LABELS,
   REPORTING_AREA_LABELS,
-  REPORT_STATUS_LABELS,
   SERIOUSNESS_LABELS,
-  SEVERITY_GRADE_LABELS,
   SEX_LABELS,
   UY_DEPARTMENT_LABELS,
   labelFor,
   type AdverseEventReportDraft,
   type ExportFormat,
-  type SubmittedReportStatus,
 } from "@canmedseg/shared";
 import ExcelJS from "exceljs";
 import type { Pool } from "pg";
@@ -34,9 +30,9 @@ import { resolvePseudonyms } from "./pseudonyms";
 
 type ExportRow = {
   id: string;
-  status: SubmittedReportStatus;
+  import_source: string | null;
+  external_report_id: string | null;
   submitted_at: Date;
-  reviewed_at: Date | null;
   patient_national_id: string | null;
   patient_department: string | null;
   form_data: AdverseEventReportDraft;
@@ -58,9 +54,9 @@ export type ExportBundle = {
 const REPORT_COLUMNS = [
   "ID reporte",
   "Seudónimo paciente",
-  "Estado",
+  "Origen",
+  "ID VigiFlow",
   "Fecha de notificación",
-  "Fecha de validación",
   "Iniciales",
   "Sexo",
   "Edad al comienzo del evento",
@@ -70,8 +66,6 @@ const REPORT_COLUMNS = [
   "País del evento",
   "Departamento",
   "Descripción del evento adverso",
-  "Clasificación de gravedad",
-  "Relación causal",
   "Enfermedades previas",
   "Tratamientos concomitantes",
   "Comentarios adicionales",
@@ -154,7 +148,7 @@ export async function buildExportBundle(
 ): Promise<ExportBundle> {
   const { where, params } = buildReportFilter(filters);
   const result = await pool.query<ExportRow>(
-    `SELECT r.id, r.status, r.submitted_at, r.reviewed_at,
+    `SELECT r.id, r.import_source, r.external_report_id, r.submitted_at,
             r.patient_national_id, r.patient_department, r.form_data
        FROM reports r
       WHERE ${where}
@@ -183,9 +177,9 @@ export async function buildExportBundle(
     reports.push([
       row.id,
       pseudonym,
-      REPORT_STATUS_LABELS[row.status],
+      row.import_source === "vigiflow" ? "VigiFlow" : "Formulario",
+      text(row.external_report_id),
       isoDate(row.submitted_at),
-      isoDate(row.reviewed_at),
       text(patient.initials),
       labelFor(SEX_LABELS, patient.sex),
       num(patient.ageAtEventStart),
@@ -195,8 +189,6 @@ export async function buildExportBundle(
       text(patient.countryOfEventStart),
       labelFor(UY_DEPARTMENT_LABELS, row.patient_department ?? patient.department),
       text(report.adverseEventDescription),
-      labelFor(SEVERITY_GRADE_LABELS, report.severityGrade),
-      labelFor(CAUSALITY_LABELS, report.causality),
       text(report.previousDiseases),
       bool(report.hasConcomitantTreatments),
       text(report.additionalComments),

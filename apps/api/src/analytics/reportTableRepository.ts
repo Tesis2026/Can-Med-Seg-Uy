@@ -14,7 +14,7 @@ type TableRow = {
   id: string;
   submitted_at: Date;
   status: SubmittedReportStatus;
-  serious: boolean;
+  serious: boolean | null;
   contact_profession: string | null;
   patient_initials: string | null;
   patient_national_id: string | null;
@@ -82,8 +82,9 @@ export async function getReportTable(
     `SELECT r.id,
             r.submitted_at,
             r.status,
-            EXISTS (SELECT 1 FROM report_adverse_events e
-                     WHERE e.report_id = r.id AND e.is_serious) AS serious,
+            (SELECT CASE WHEN bool_or(e.is_serious) THEN true
+                         WHEN count(*) = count(e.is_serious) AND count(*) > 0 THEN false
+                    END FROM report_adverse_events e WHERE e.report_id = r.id) AS serious,
             r.contact_profession,
             r.patient_initials,
             r.patient_national_id,

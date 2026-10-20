@@ -130,7 +130,6 @@ function applyCorrections(
 
 function syncSubmittedColumns(report: AdverseEventReportDraft) {
   return {
-    severityGrade: report.severityGrade ?? null,
     investigatorCausalRelation: report.causality ?? null,
     adverseEventDescription: report.adverseEventDescription,
   };
@@ -216,16 +215,14 @@ export async function applyReviewCorrections(
     await client.query(
       `UPDATE reports
           SET form_data = $2,
-              severity_grade = $3,
-              investigator_causal_relation = $4,
-              adverse_event_description = $5,
-              review_notes = COALESCE($6, review_notes),
+              investigator_causal_relation = $3,
+              adverse_event_description = $4,
+              review_notes = COALESCE($5, review_notes),
               updated_at = now()
         WHERE id = $1 AND status = 'en_revision'`,
       [
         reportId,
         JSON.stringify(updated),
-        columns.severityGrade,
         columns.investigatorCausalRelation,
         columns.adverseEventDescription,
         input.reviewNotes ?? null,
@@ -301,11 +298,10 @@ export async function classifyReport(
       `UPDATE reports
           SET status = $2,
               form_data = $3,
-              severity_grade = $4,
-              investigator_causal_relation = $5,
-              adverse_event_description = $6,
-              review_notes = COALESCE($7, review_notes),
-              reviewed_by = $8,
+              investigator_causal_relation = $4,
+              adverse_event_description = $5,
+              review_notes = COALESCE($6, review_notes),
+              reviewed_by = $7,
               reviewed_at = now(),
               updated_at = now()
         WHERE id = $1 AND status = 'en_revision'
@@ -314,7 +310,6 @@ export async function classifyReport(
         reportId,
         newStatus,
         JSON.stringify(updated),
-        columns.severityGrade,
         columns.investigatorCausalRelation,
         columns.adverseEventDescription,
         input.reviewNotes ?? null,

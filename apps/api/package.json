@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "test:imports": "tsx --test src/imports/vigiflow.test.ts src/imports/import.integration.test.ts",
     "dev": "tsx watch src/server.ts",
     "start": "tsx src/server.ts",
     "db:migrate": "tsx src/database/migrate.ts",
@@ -14,6 +15,7 @@
   },
   "dependencies": {
     "@canmedseg/shared": "*",
+    "@curedclick/app-invite": "^0.2.2",
     "@fastify/cors": "^10.0.2",
     "@fastify/formbody": "^8.0.2",
     "better-auth": "^1.7.6",

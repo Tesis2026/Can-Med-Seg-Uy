@@ -28,8 +28,8 @@ const environmentSchema = z.object({
   BETTER_AUTH_SECRET: z.string().min(32).default("canmedseg-better-auth-secreto-local-dev"),
 
   /**
-   * Envío de mails vía API HTTP de Brevo (recuperación de contraseña, reportes
-   * periódicos). Clave `xkeysib-…` (no la SMTP key). Sin ella, el mail va al log.
+   * Envío de mails vía API HTTP de Brevo (recuperación de contraseña, invitaciones,
+   * reportes periódicos). Clave `xkeysib-…` (no la SMTP key). Sin ella, el mail va al log.
    */
   BREVO_API_KEY: z.string().optional(),
   EMAIL_FROM: z.string().min(1).default("Farmacovigilancia MSP <no-responder@localhost>"),

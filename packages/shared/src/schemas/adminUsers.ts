@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-import { Role, isActiveRole } from "../enums/role";
 import { userRoleSchema } from "./auth";
 
 export const PASSWORD_MIN_LENGTH = 8;
@@ -30,42 +29,48 @@ export type AdminUser = z.infer<typeof adminUserSchema>;
 
 export const adminUserListSchema = z.array(adminUserSchema);
 
-export const createUserInputSchema = z
+const emailSchema = z.string().trim().toLowerCase().email("Ingrese un email válido");
+
+/** Toda cuenta invitada queda con el rol Investigador: el admin solo indica el email. */
+export const inviteResearcherInputSchema = z.object({
+  email: emailSchema,
+});
+
+export type InviteResearcherInput = z.infer<typeof inviteResearcherInputSchema>;
+
+export const pendingInvitationSchema = z.object({
+  id: z.string().uuid(),
+  email: z.string(),
+  inviterName: z.string().nullable(),
+  createdAt: z.string().datetime(),
+  expiresAt: z.string().datetime(),
+  /** Vencida: ya no se puede usar, pero se puede reenviar (renueva el plazo). */
+  expired: z.boolean(),
+});
+
+export type PendingInvitation = z.infer<typeof pendingInvitationSchema>;
+
+export const pendingInvitationListSchema = z.array(pendingInvitationSchema);
+
+/** Lo único que ve la persona invitada antes de registrarse. */
+export const invitationDetailsSchema = z.object({
+  email: z.string(),
+});
+
+export type InvitationDetails = z.infer<typeof invitationDetailsSchema>;
+
+export const acceptInvitationInputSchema = z
   .object({
-    displayName: z.string().trim().min(1, "Ingrese el nombre").max(120),
-    email: z.string().trim().toLowerCase().email("Ingrese un email válido"),
+    displayName: z.string().trim().min(1, "Ingrese su nombre").max(120),
     password: passwordSchema,
-    roles: z.array(userRoleSchema),
+    confirmation: z.string(),
   })
-  .superRefine((value, context) => {
-    const seen = new Set<string>();
-    value.roles.forEach((entry, index) => {
-      if (seen.has(entry.role)) {
-        context.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["roles", index],
-          message: "Rol repetido",
-        });
-      }
-      seen.add(entry.role);
-      if (entry.role !== Role.Comun && !isActiveRole(entry.role)) {
-        context.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["roles", index],
-          message: "Rol no disponible",
-        });
-      }
-      if (entry.role === Role.ProfesionalSalud && entry.healthProfessionSubtype === null) {
-        context.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["roles", index, "healthProfessionSubtype"],
-          message: "Seleccione el tipo de profesional de la salud",
-        });
-      }
-    });
+  .refine((value) => value.password === value.confirmation, {
+    path: ["confirmation"],
+    message: "Las contraseñas no coinciden",
   });
 
-export type CreateUserInput = z.infer<typeof createUserInputSchema>;
+export type AcceptInvitationInput = z.infer<typeof acceptInvitationInputSchema>;
 
 export const setUserPasswordInputSchema = z.object({
   password: passwordSchema,
@@ -74,14 +79,14 @@ export const setUserPasswordInputSchema = z.object({
 export type SetUserPasswordInput = z.infer<typeof setUserPasswordInputSchema>;
 
 export const signInInputSchema = z.object({
-  email: z.string().trim().toLowerCase().email("Ingrese un email válido"),
+  email: emailSchema,
   password: z.string().min(1, "Ingrese su contraseña"),
 });
 
 export type SignInInput = z.infer<typeof signInInputSchema>;
 
 export const requestPasswordResetInputSchema = z.object({
-  email: z.string().trim().toLowerCase().email("Ingrese un email válido"),
+  email: emailSchema,
 });
 
 export type RequestPasswordResetInput = z.infer<typeof requestPasswordResetInputSchema>;

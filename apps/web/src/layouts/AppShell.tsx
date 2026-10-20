@@ -14,6 +14,9 @@ export type AppShellProps = {
 };
 
 export function AppShell({ showMenu = true, children }: AppShellProps) {
+  const { pathname } = useLocation();
+  const showHeaderMenu = showMenu && pathname.replace(/\/+$/, "") !== "/login";
+
   return (
     <div className={styles.shell}>
       <header className={styles.header}>
@@ -23,7 +26,7 @@ export function AppShell({ showMenu = true, children }: AppShellProps) {
               <span className={styles.logoText}>Ministerio de Salud Pública</span>
             </Link>
           </div>
-          {showMenu ? <HeaderMenu /> : null}
+          {showHeaderMenu ? <HeaderMenu /> : null}
         </div>
       </header>
 
@@ -147,6 +150,9 @@ function HeaderMenu() {
                 Reportes periódicos
               </Link>
             </>
+          ) : null}
+          {hasPermission(session.permissions, Permission.ReportImport) ? (
+            <Link className={styles.menuItem} role="menuitem" to="/importar-reportes">Importar reportes</Link>
           ) : null}
           {hasPermission(session.permissions, Permission.UsersManage) ? (
             <Link className={styles.menuItem} role="menuitem" to="/admin/usuarios">

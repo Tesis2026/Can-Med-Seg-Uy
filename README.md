@@ -54,14 +54,33 @@ puerto, definí `API_PROXY_TARGET` en el `.env`.
 
 El ingreso es con **email y contraseña**, resuelto con [better-auth](https://better-auth.com)
 dentro de la API (open source, sin servicios externos ni telemetría: todo queda en
-nuestro Postgres). No hay registro público: **las cuentas las crea el administrador**
-desde **Gestión de usuarios** (`/admin/usuarios`), donde también puede cambiar
-contraseñas, activar, desactivar y borrar usuarios.
+nuestro Postgres). No hay registro público: **las cuentas se crean por invitación**
+desde **Gestión de usuarios** (`/admin/usuarios`), donde el administrador también puede
+cambiar contraseñas, activar, desactivar y borrar usuarios.
+
+### Invitaciones
+
+«Invitar investigador» pide solo el email: **toda cuenta invitada queda con el rol
+Investigador**. La persona recibe un email con un enlace (`/registro/<id>`, vence en
+7 días y sirve una sola vez) donde completa su nombre y contraseña; el email viene de la
+invitación y no se puede cambiar. Al terminar queda con la sesión iniciada.
+
+Las invitaciones sin aceptar aparecen en «Invitaciones pendientes»: **Reenviar** manda
+el mismo enlace y renueva el plazo (también sirve para las vencidas) y **Cancelar** lo
+invalida. Se implementa con el plugin
+[`@curedclick/app-invite`](https://better-auth-extended.jsolano.de/docs/plugins/app-invite)
+de better-auth (tabla `app_invitations`).
+
+Para que los emails lleguen en producción, definí `BREVO_API_KEY` (plan gratuito de
+[Brevo](https://www.brevo.com)) y un `EMAIL_FROM` con un remitente verificado en Brevo.
+Se usa su API HTTP porque el plan gratuito de Render bloquea los puertos SMTP. Sin
+`BREVO_API_KEY`, los emails se escriben en el log de la API.
 
 - **Desactivar** impide el ingreso y cierra las sesiones abiertas del usuario.
-- **Borrar** elimina la cuenta y **todos sus datos**: reportes enviados, formularios en
-  progreso, roles y sesiones. Las revisiones que hizo sobre reportes de otros se
-  conservan, sin revisor asignado.
+- **Borrar** elimina la cuenta, sus formularios en progreso, roles y sesiones. Los
+  reportes que cargó o importó **se conservan** sin usuario asociado y siguen en el
+  dashboard y la exportación, igual que el registro de sus exportaciones y las
+  revisiones que hizo.
 
 El primer administrador se crea por consola:
 
@@ -82,22 +101,9 @@ Desde el login, «¿Olvidó su contraseña?» envía un enlace de un solo uso qu
 Las cuentas desactivadas no reciben el enlace, y la respuesta es la misma exista o no
 el email.
 
-Los mails (recuperación de contraseña y reportes periódicos) salen por la API HTTP de
-[Brevo](https://www.brevo.com). Sin `BREVO_API_KEY`, el mail completo (con el enlace) se
-escribe en el **log de la API**, útil en local.
-
-```dotenv
-BREVO_API_KEY=xkeysib-…
-EMAIL_FROM=Farmacovigilancia MSP <remitente-verificado@ejemplo.com>
-WEB_BASE_URL=https://tu-app.vercel.app
-```
-
-Pasos: verificar el remitente, generar una **API key** (`xkeysib-…`, no la SMTP key
-`xsmtpsib-…`), desactivar el bloqueo por IP en Security → Authorized IPs, cargar las
-variables y redesplegar la API. Guía: `documentacion/configurar-envio-de-mails.md`.
-
-`WEB_BASE_URL` arma el link de `/restablecer-contrasena`. Los pedidos de enlace están
-limitados a 3 por minuto por IP.
+`WEB_BASE_URL` arma los links de `/restablecer-contrasena` y de las invitaciones. Los
+pedidos de enlace de recuperación están limitados a 3 por minuto por IP. Detalle de
+Brevo: `documentacion/configurar-envio-de-mails.md`.
 
 ### Registro con GUB UY: deprecado momentáneamente
 

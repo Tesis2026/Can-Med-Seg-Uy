@@ -197,7 +197,7 @@ export const reportTableRowSchema = z.object({
   id: z.string().uuid(),
   submittedAt: z.string().datetime(),
   status: submittedStatus,
-  serious: z.boolean(),
+  serious: z.boolean().nullable(),
   professionLabel: z.string(),
   patientLabel: z.string(),
   eventSummary: z.string(),

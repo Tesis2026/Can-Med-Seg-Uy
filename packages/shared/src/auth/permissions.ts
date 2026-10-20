@@ -5,6 +5,7 @@ import { Role, isActiveRole } from "../enums/role";
  * Los guards de la API y las rutas de la web consultan esta única fuente.
  */
 export const Permission = {
+  ReportImport: "report:import",
   /** Llenar y enviar un reporte (también anónimo, con CAPTCHA + email). */
   ReportSubmit: "report:submit",
   /** Guardar borradores (RF-4) — solo usuarios logueados. */
@@ -42,10 +43,11 @@ const NOTIFIER_PERMISSIONS: readonly Permission[] = [
 /**
  * MSP (validador) tiene la misma superficie que Investigador por ahora
  * (rol separado para la transferencia institucional — plan-arquitectura.md).
+ * Sin `ReportReview`: la bandeja de revisión no forma parte del flujo vigente.
  */
 const REVIEWER_PERMISSIONS: readonly Permission[] = [
+  Permission.ReportImport,
   ...NOTIFIER_PERMISSIONS,
-  Permission.ReportReview,
   Permission.DashboardRead,
   Permission.ExportRead,
   Permission.PeriodicReportsReceive,

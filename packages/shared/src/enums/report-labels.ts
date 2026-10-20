@@ -63,6 +63,7 @@ export const ADMINISTRATION_ROUTE_LABELS: Record<string, string> = {
   "topico": "Tópico/ Cutáneo",
   "oral": "Oral",
   "respiratoria": "Respiratoria (inhalación)",
+  "sublingual": "Sublingual",
   "desconocido": "Desconocido",
   "intramuscular": "Intramuscular (inyección en el músculo)",
   "intravenosa": "Intravenosa (no especificada)",

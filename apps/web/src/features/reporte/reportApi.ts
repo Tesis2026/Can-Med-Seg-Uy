@@ -123,6 +123,13 @@ export async function listOwnReports(): Promise<ReportHistoryItem[]> {
   );
 }
 
+export async function deleteOwnReport(id: string): Promise<void> {
+  await apiFetch(`/api/reports/history/${id}`, {
+    method: "DELETE",
+    fallbackMessage: "No se pudo eliminar el reporte.",
+  });
+}
+
 export async function fetchNotifierStats(): Promise<NotifierStats> {
   return notifierStatsSchema.parse(
     await apiFetch("/api/reports/stats", {

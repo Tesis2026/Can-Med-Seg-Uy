@@ -15,12 +15,12 @@ import { z } from "zod";
 import { CaptchaError, consumeVerificationToken } from "../captcha/captchaRepository";
 import { pool } from "../database/pool";
 import { requirePermission } from "../auth/guards";
-import { notifyInvestigatorsNewReportStub } from "../notifications/investigatorNotify";
 import {
   DraftNotFoundError,
   createDraft,
   createReport,
   deleteDraft,
+  deleteOwnReport,
   getDraft,
   getNotifierStats,
   getReport,
@@ -92,7 +92,6 @@ export const reportRoutes: FastifyPluginAsync = async (app) => {
         user?.id ?? null,
         user ? (draftId ?? null) : null,
       );
-      notifyInvestigatorsNewReportStub(request.log, report, created.id);
       return reply.code(201).send(created);
     } catch (error) {
       if (error instanceof DraftNotFoundError) {
@@ -170,6 +169,17 @@ export const reportRoutes: FastifyPluginAsync = async (app) => {
     async (request, reply) => reply.send(await listOwnReports(pool, sessionUserId(request))),
   );
 
+  app.delete(
+    "/reports/history/:id",
+    { preHandler: requirePermission(Permission.ReportHistoryRead) },
+    async (request, reply) => {
+      const { id } = reportParamsSchema.parse(request.params);
+      const deleted = await deleteOwnReport(pool, id, sessionUserId(request));
+      if (!deleted) return reply.code(404).send({ message: "Reporte no encontrado" });
+      return reply.code(204).send();
+    },
+  );
+
   /** Contadores de la home del notificador (propios + total nacional). */
   app.get(
     "/reports/stats",
@@ -212,7 +222,7 @@ export const reportRoutes: FastifyPluginAsync = async (app) => {
     async (request, reply) => {
       const { id } = reportParamsSchema.parse(request.params);
       const detail = await getReviewReport(pool, id);
-      if (!detail) return reply.code(404).send({ message: "Reporte no encontrado o ya revisado." });
+      if (!detail) return reply.code(404).send({ message: "Reporte no encontrado." });
       return reply.send(reviewReportDetailSchema.parse(detail));
     },
   );
@@ -258,7 +268,9 @@ export const reportRoutes: FastifyPluginAsync = async (app) => {
     const { id } = reportParamsSchema.parse(request.params);
     const report = await getReport(pool, id, {
       userId: request.auth.user?.id ?? null,
-      canReview: hasPermission(request.auth.permissions, Permission.ReportReview),
+      canReview:
+        hasPermission(request.auth.permissions, Permission.ReportReview) ||
+        hasPermission(request.auth.permissions, Permission.DashboardRead),
     });
     if (!report) {
       return reply.code(404).send({ message: "Reporte no encontrado" });

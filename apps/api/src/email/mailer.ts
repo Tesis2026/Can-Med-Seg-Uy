@@ -7,6 +7,8 @@ export type EmailMessage = {
   html: string;
 };
 
+const BREVO_SEND_URL = "https://api.brevo.com/v3/smtp/email";
+
 function brevoApiKey(): string | undefined {
   return config.BREVO_API_KEY?.trim() || undefined;
 }
@@ -50,7 +52,7 @@ export async function sendEmail(message: EmailMessage): Promise<void> {
   }
 
   const sender = parseFromAddress(config.EMAIL_FROM);
-  const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+  const response = await fetch(BREVO_SEND_URL, {
     method: "POST",
     headers: {
       accept: "application/json",
@@ -67,7 +69,7 @@ export async function sendEmail(message: EmailMessage): Promise<void> {
   });
 
   if (!response.ok) {
-    const detail = await response.text();
+    const detail = await response.text().catch(() => "");
     throw new Error(`Brevo respondió ${response.status}: ${detail}`);
   }
 }

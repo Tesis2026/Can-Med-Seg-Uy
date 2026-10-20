@@ -3,7 +3,6 @@ import { parseArgs } from "node:util";
 import { PASSWORD_MIN_LENGTH, Role } from "@canmedseg/shared";
 
 import { assignInitialRoles } from "../admin/userAdminRepository";
-import { auth } from "../auth/betterAuth";
 import { runMigrations } from "../database/migrate";
 import { pool } from "../database/pool";
 
@@ -27,6 +26,7 @@ async function main(): Promise<void> {
   }
 
   await runMigrations();
+  const { auth } = await import("../auth/betterAuth");
   const context = await auth.$context;
   const existing = await context.internalAdapter.findUserByEmail(email);
 
