@@ -46,7 +46,13 @@ export function BarChart({ slices, singleColor, unitLabel }: BarChartProps) {
   return (
     <div className={styles.plotWrap}>
       <div className={styles.bars}>
-        <div className={styles.grid} aria-hidden="true">
+        {/* Filas explícitas: la grilla de fondo se superpone a todas las barras
+            sin ocupar celdas de la autocolocación. */}
+        <div
+          className={styles.grid}
+          aria-hidden="true"
+          style={{ gridRow: `1 / ${slices.length + 1}` }}
+        >
           {ticks.map((tick) => (
             <span key={tick} className={styles.gridLine} />
           ))}
@@ -56,6 +62,7 @@ export function BarChart({ slices, singleColor, unitLabel }: BarChartProps) {
           const color = singleColor ?? colorForIndex(index, slice.key);
           const width = max > 0 ? (slice.value / max) * 100 : 0;
           const dimmed = hovered !== null && hovered !== index;
+          const row = { gridRow: index + 1 };
 
           return (
             <div
@@ -64,10 +71,10 @@ export function BarChart({ slices, singleColor, unitLabel }: BarChartProps) {
               onMouseEnter={() => setHovered(index)}
               onMouseLeave={() => setHovered(null)}
             >
-              <span className={styles.barLabel} title={slice.label}>
+              <span className={styles.barLabel} style={row} title={slice.label}>
                 {slice.label}
               </span>
-              <span className={styles.barTrack}>
+              <span className={styles.barTrack} style={row}>
                 <span
                   className={styles.barFill}
                   style={{
@@ -77,12 +84,16 @@ export function BarChart({ slices, singleColor, unitLabel }: BarChartProps) {
                   }}
                 />
               </span>
-              <span className={styles.barValue}>{numberFormat.format(slice.value)}</span>
+              <span className={styles.barValue} style={row}>{numberFormat.format(slice.value)}</span>
             </div>
           );
         })}
 
-        <div className={styles.axisRow} aria-hidden="true">
+        <div
+          className={styles.axisRow}
+          aria-hidden="true"
+          style={{ gridRow: slices.length + 1 }}
+        >
           {ticks.map((tick) => (
             <span key={tick} className={styles.axisTick}>
               {numberFormat.format(Math.round(tick))}

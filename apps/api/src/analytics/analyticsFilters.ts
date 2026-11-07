@@ -1,7 +1,7 @@
 import {
-  ADULT_AGE,
+  AGE_BUCKETS,
   AGE_GROUP_LABELS,
-  AgeGroup,
+  AGE_SIN_DATO,
   COMPOSITION_BUCKETS,
   APPROVED_REPORT_STATUSES,
   REPORTING_AREA_LABELS,
@@ -67,10 +67,17 @@ export function buildReportFilter(filters: AnalyticsFilters): SqlFilter {
 
   conditions.push(`r.status = ANY(${params.add(BASE_STATUSES)}::report_status[])`);
 
-  if (filters.ageGroup === AgeGroup.Menores) {
-    conditions.push(`r.patient_age_at_event_start < ${params.add(ADULT_AGE)}`);
-  } else if (filters.ageGroup === AgeGroup.Mayores) {
-    conditions.push(`r.patient_age_at_event_start >= ${params.add(ADULT_AGE)}`);
+  if (filters.ageGroup) {
+    // Mismos tramos que el gráfico: «Sin dato» es todo lo que no cae en ninguno.
+    const age = "r.patient_age_at_event_start";
+    const bucket = AGE_BUCKETS.find((entry) => entry.key === filters.ageGroup);
+    if (bucket) {
+      conditions.push(`${age} BETWEEN ${params.add(bucket.min)} AND ${params.add(bucket.max)}`);
+    } else if (filters.ageGroup === AGE_SIN_DATO) {
+      const min = AGE_BUCKETS[0].min;
+      const max = AGE_BUCKETS[AGE_BUCKETS.length - 1].max;
+      conditions.push(`(${age} IS NULL OR ${age} NOT BETWEEN ${params.add(min)} AND ${params.add(max)})`);
+    }
   }
 
   if (filters.region) {
@@ -106,6 +113,12 @@ export function buildReportFilter(filters: AnalyticsFilters): SqlFilter {
 
   if (filters.reportingArea) {
     conditions.push(`r.contact_reporting_area = ${params.add(filters.reportingArea)}`);
+  }
+
+  if (filters.adverseEvent) {
+    // Se escapan los comodines de LIKE para buscar el texto literal.
+    const needle = `%${filters.adverseEvent.replace(/[\\%_]/g, "\\$&")}%`;
+    conditions.push(`r.adverse_event_description ILIKE ${params.add(needle)}`);
   }
 
   if (filters.from || filters.to) {
@@ -155,6 +168,7 @@ export function describeFilters(filters: AnalyticsFilters): string {
   if (filters.reportingArea) {
     parts.push(`Área reportante: ${labelFor(REPORTING_AREA_LABELS, filters.reportingArea)}`);
   }
+  if (filters.adverseEvent) parts.push(`Evento adverso: contiene «${filters.adverseEvent}»`);
 
   return parts.join(" · ");
 }

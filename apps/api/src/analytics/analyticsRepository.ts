@@ -1,5 +1,6 @@
 import {
   ADMINISTRATION_ROUTE_LABELS,
+  AGE_BUCKETS,
   ANALYTICS_CHART_LABELS,
   ANALYTICS_CHART_UNITS,
   AnalyticsChart,
@@ -41,14 +42,6 @@ const MONTH_LABELS = [
   "Dic",
 ];
 
-/** Tramos etarios fijos de RF-7.8. */
-const AGE_BUCKETS = [
-  { key: "0_11", label: "0 a 11 años", min: 0, max: 11 },
-  { key: "12_17", label: "12 a 17 años", min: 12, max: 17 },
-  { key: "18_44", label: "18 a 44 años", min: 18, max: 44 },
-  { key: "45_64", label: "45 a 64 años", min: 45, max: 64 },
-  { key: "65_mas", label: "65 años o más", min: 65, max: 200 },
-];
 
 
 function percentage(value: number, total: number): number {
@@ -65,7 +58,8 @@ function toSeries(
   chart: AnalyticsChart,
   rows: CountRow[],
   order: readonly { key: string; label: string }[],
-  options: { excluded?: number } = {},
+  /** `alwaysShowUnknown` muestra «Sin dato» aunque esté en cero. */
+  options: { excluded?: number; alwaysShowUnknown?: boolean } = {},
 ): AnalyticsSeries {
   const counts = new Map<string, number>();
   for (const row of rows) {
@@ -93,7 +87,7 @@ function toSeries(
     .filter(([key]) => !known.has(key))
     .reduce((sum, [, value]) => sum + value, 0);
 
-  if (unknown > 0) {
+  if (unknown > 0 || options.alwaysShowUnknown) {
     visible.push({
       key: SIN_DATO,
       label: SIN_DATO_LABEL,
@@ -263,7 +257,7 @@ export async function getDashboard(
       });
 
   const series: AnalyticsSeries[] = [
-    toSeries(AnalyticsChart.GrupoEtario, ageRows, AGE_BUCKETS),
+    toSeries(AnalyticsChart.GrupoEtario, ageRows, AGE_BUCKETS, { alwaysShowUnknown: true }),
     toSeries(AnalyticsChart.Sexo, sexRows, orderFromLabels(SEX_LABELS)),
     toSeries(AnalyticsChart.Gravedad, seriousRows, [
       { key: "grave", label: "Grave" },
