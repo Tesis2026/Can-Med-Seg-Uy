@@ -1,17 +1,35 @@
-export const ADULT_AGE = 18;
+import { SIN_DATO } from "./analytics-chart";
 
-export const AgeGroup = {
-  Menores: "menores",
-  Mayores: "mayores",
-} as const;
+/**
+ * Tramos etarios (RF-7.8). Única fuente para el gráfico «Distribución por grupo
+ * etario» y el filtro «Edad», así ambos muestran siempre las mismas opciones.
+ * «Sin dato» agrupa los reportes sin edad o con una edad fuera de rango.
+ */
+export const AGE_BUCKETS = [
+  { key: "0_2", label: "0 a 2 años", min: 0, max: 2 },
+  { key: "3_6", label: "3 a 6 años", min: 3, max: 6 },
+  { key: "7_11", label: "7 a 11 años", min: 7, max: 11 },
+  { key: "12_17", label: "12 a 17 años", min: 12, max: 17 },
+  { key: "18_44", label: "18 a 44 años", min: 18, max: 44 },
+  { key: "45_mas", label: "45 años o más", min: 45, max: 200 },
+] as const;
 
-export type AgeGroup = (typeof AgeGroup)[keyof typeof AgeGroup];
+/** Misma clave que el resto de las categorías «Sin dato» de los gráficos. */
+export const AGE_SIN_DATO = SIN_DATO;
 
-export const AGE_GROUPS = Object.values(AgeGroup);
+export type AgeGroup = (typeof AGE_BUCKETS)[number]["key"] | typeof AGE_SIN_DATO;
+
+export const AGE_GROUPS: readonly AgeGroup[] = [
+  ...AGE_BUCKETS.map((bucket) => bucket.key),
+  AGE_SIN_DATO,
+];
 
 export const AGE_GROUP_LABELS: Record<AgeGroup, string> = {
-  [AgeGroup.Menores]: `Menores de ${ADULT_AGE}`,
-  [AgeGroup.Mayores]: `${ADULT_AGE} años o más`,
+  ...(Object.fromEntries(AGE_BUCKETS.map((bucket) => [bucket.key, bucket.label])) as Record<
+    (typeof AGE_BUCKETS)[number]["key"],
+    string
+  >),
+  [AGE_SIN_DATO]: "Sin dato",
 };
 
 export const COMPOSITION_BUCKETS = [

@@ -54,22 +54,57 @@
 }
 
 /* Filtros globales */
-.filterRow {
+.filterPanel {
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 12px;
+  flex-direction: column;
+  gap: 16px;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  padding: 16px;
+  padding: 16px 20px 20px;
+}
+
+.filterHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.filterTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.filterCount {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.filterTopRow {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.filterGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
 }
 
 .filter {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  min-width: 160px;
-  flex: 1 1 160px;
+  gap: 6px;
+  min-width: 0;
 }
 
 .filterLabel {
@@ -87,6 +122,12 @@
   color: var(--color-text);
   border-radius: 0;
   width: 100%;
+  min-width: 0;
+}
+
+.select:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -1px;
 }
 
 .clearFilters {
@@ -96,8 +137,98 @@
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  padding: 8px 0;
+  padding: 4px 0;
   white-space: nowrap;
+}
+
+.clearFilters:disabled {
+  color: var(--color-text-secondary);
+  cursor: default;
+}
+
+/* Carga: capa con fundido sobre métricas y tabla */
+.loadingHost {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.tableSection .loadingHost {
+  gap: 12px;
+}
+
+.loadingHostEmpty {
+  min-height: 160px;
+}
+
+.loadingOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 48px;
+  background: color-mix(in srgb, var(--color-page-bg) 65%, transparent);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  /* Salida: fundido de 350 ms y recién después se oculta. */
+  transition:
+    opacity 350ms ease,
+    visibility 0s linear 350ms;
+}
+
+.loadingOverlayActive {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  /* Entrada con retraso: las respuestas rápidas no llegan a mostrarla. */
+  transition:
+    opacity 200ms ease 150ms,
+    visibility 0s linear 0s;
+}
+
+.loadingBadge {
+  position: sticky;
+  top: 96px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 8%);
+  color: var(--color-text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.loadingSpinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: loadingSpin 0.8s linear infinite;
+}
+
+@keyframes loadingSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loadingOverlay,
+  .loadingOverlayActive {
+    transition-duration: 0s;
+  }
+
+  .loadingSpinner {
+    animation-duration: 2.4s;
+  }
 }
 
 /* Indicadores */
@@ -236,24 +367,6 @@
 
 .rowLink:hover {
   text-decoration: underline;
-}
-
-.status {
-  font-size: 12px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.statusEnRevision {
-  color: #d97706;
-}
-
-.statusAprobado {
-  color: #166534;
-}
-
-.statusRechazado {
-  color: #dc2626;
 }
 
 .serious {
@@ -399,6 +512,18 @@
 }
 
 @media (max-width: 1100px) {
+  .filterTopRow {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .filterTopRow > :first-child {
+    grid-column: 1 / -1;
+  }
+
+  .filterGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .chartGrid {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -409,6 +534,11 @@
 }
 
 @media (max-width: 640px) {
+  .filterTopRow,
+  .filterGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .title {
     font-size: 22px;
   }

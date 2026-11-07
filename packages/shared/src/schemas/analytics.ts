@@ -73,11 +73,13 @@ export const analyticsFiltersSchema = z.object({
   cbd: compositionBucketSchema.optional(),
   meddra: z.string().trim().min(1).optional(),
   reportingArea: z.string().trim().min(1).optional(),
+  /** Texto contenido en la descripción del evento adverso (var. 10). */
+  adverseEvent: z.string().trim().min(1).max(500).optional(),
 });
 
 export type AnalyticsFilters = z.infer<typeof analyticsFiltersSchema>;
 
-const TEXT_FILTERS = ["from", "to", "ageGroup", "region", "product", "thc", "cbd", "meddra", "reportingArea"] as const;
+const TEXT_FILTERS = ["from", "to", "ageGroup", "region", "product", "thc", "cbd", "meddra", "reportingArea", "adverseEvent"] as const;
 
 /**
  * Lee los filtros desde la query string (web y API usan la misma función, así

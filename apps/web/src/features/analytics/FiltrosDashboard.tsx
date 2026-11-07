@@ -65,6 +65,8 @@ const SERIOUS_OPTIONS = [
   { value: "false", label: "Solo no graves" },
 ];
 
+const SEARCH_DEBOUNCE_MS = 400;
+
 const toOptions = (values: string[]) => values.map((value) => ({ value, label: value }));
 
 /**
@@ -90,106 +92,153 @@ export function FiltrosDashboard({ filters, onChange }: FiltrosDashboardProps) {
     onChange({ ...filters, ...partial });
   }
 
+  // El texto se escribe libre y se aplica tras una pausa, para no recalcular
+  // el dashboard en cada tecla.
+  const [eventText, setEventText] = useState(filters.adverseEvent ?? "");
+  useEffect(() => {
+    setEventText(filters.adverseEvent ?? "");
+  }, [filters.adverseEvent]);
+  useEffect(() => {
+    const value = eventText.trim() || undefined;
+    if (value === filters.adverseEvent) return;
+    const timer = window.setTimeout(() => patch({ adverseEvent: value }), SEARCH_DEBOUNCE_MS);
+    return () => window.clearTimeout(timer);
+  }, [eventText]);
+
+  const activeCount = (Object.keys(filters) as (keyof AnalyticsFilters)[]).filter(
+    (key) => key !== "dateField" && filters[key] !== undefined,
+  ).length;
+
   return (
-    <div className={styles.filterRow}>
-      <SelectFilter
-        label="Edad"
-        value={filters.ageGroup}
-        allLabel="Todas"
-        options={AGE_OPTIONS}
-        onChange={(value) => patch({ ageGroup: value as AnalyticsFilters["ageGroup"] })}
-      />
-      <SelectFilter
-        label="Región"
-        value={filters.region}
-        allLabel="Todas"
-        options={REGION_OPTIONS}
-        onChange={(value) => patch({ region: value as AnalyticsFilters["region"] })}
-      />
-      <SelectFilter
-        label="Gravedad"
-        value={filters.serious === undefined ? undefined : String(filters.serious)}
-        allLabel="Todas"
-        options={SERIOUS_OPTIONS}
-        onChange={(value) => patch({ serious: value === undefined ? undefined : value === "true" })}
-      />
-      <SelectFilter
-        label="Producto"
-        value={filters.product}
-        allLabel="Todos"
-        options={toOptions(options.products)}
-        onChange={(value) => patch({ product: value })}
-      />
-      <SelectFilter
-        label="Contenido de THC"
-        value={filters.thc}
-        allLabel="Todos"
-        options={COMPOSITION_OPTIONS}
-        onChange={(value) => patch({ thc: value as AnalyticsFilters["thc"] })}
-      />
-      <SelectFilter
-        label="Contenido de CBD"
-        value={filters.cbd}
-        allLabel="Todos"
-        options={COMPOSITION_OPTIONS}
-        onChange={(value) => patch({ cbd: value as AnalyticsFilters["cbd"] })}
-      />
-      <SelectFilter
-        label="Clasificación MedDRA"
-        value={filters.meddra}
-        allLabel="Todas"
-        options={toOptions(options.meddraTerms)}
-        onChange={(value) => patch({ meddra: value })}
-      />
-      <SelectFilter
-        label="Área reportante"
-        value={filters.reportingArea}
-        allLabel="Todas"
-        options={REPORTING_AREA_OPTIONS}
-        onChange={(value) => patch({ reportingArea: value })}
-      />
-
-      <label className={styles.filter}>
-        <span className={styles.filterLabel}>La fecha corresponde a</span>
-        <select
-          className={styles.select}
-          value={filters.dateField}
-          onChange={(event) =>
-            patch({ dateField: event.target.value as AnalyticsFilters["dateField"] })
-          }
+    <section className={styles.filterPanel} aria-label="Filtros">
+      <div className={styles.filterHeader}>
+        <h2 className={styles.filterTitle}>
+          Filtros
+          {activeCount > 0 ? <span className={styles.filterCount}>
+              {activeCount} {activeCount === 1 ? "activo" : "activos"}
+            </span> : null}
+        </h2>
+        <button
+          type="button"
+          className={styles.clearFilters}
+          disabled={activeCount === 0}
+          onClick={() => {
+            setEventText("");
+            onChange({ dateField: "notificacion" });
+          }}
         >
-          <option value="notificacion">Fecha de notificación</option>
-          <option value="evento">Fecha del evento</option>
-        </select>
-      </label>
+          Limpiar filtros
+        </button>
+      </div>
 
-      <label className={styles.filter}>
-        <span className={styles.filterLabel}>Desde</span>
-        <input
-          type="date"
-          className={styles.select}
-          value={filters.from ?? ""}
-          onChange={(event) => patch({ from: event.target.value || undefined })}
+      <div className={styles.filterTopRow}>
+        <label className={styles.filter}>
+          <span className={styles.filterLabel}>Evento adverso</span>
+          <input
+            type="search"
+            className={styles.select}
+            placeholder="Buscar en la descripción del evento…"
+            maxLength={500}
+            value={eventText}
+            onChange={(event) => setEventText(event.target.value)}
+          />
+        </label>
+
+        <label className={styles.filter}>
+          <span className={styles.filterLabel}>La fecha corresponde a</span>
+          <select
+            className={styles.select}
+            value={filters.dateField}
+            onChange={(event) =>
+              patch({ dateField: event.target.value as AnalyticsFilters["dateField"] })
+            }
+          >
+            <option value="notificacion">Fecha de notificación</option>
+            <option value="evento">Fecha del evento</option>
+          </select>
+        </label>
+
+        <label className={styles.filter}>
+          <span className={styles.filterLabel}>Desde</span>
+          <input
+            type="date"
+            className={styles.select}
+            value={filters.from ?? ""}
+            max={filters.to}
+            onChange={(event) => patch({ from: event.target.value || undefined })}
+          />
+        </label>
+
+        <label className={styles.filter}>
+          <span className={styles.filterLabel}>Hasta</span>
+          <input
+            type="date"
+            className={styles.select}
+            value={filters.to ?? ""}
+            min={filters.from}
+            onChange={(event) => patch({ to: event.target.value || undefined })}
+          />
+        </label>
+      </div>
+
+      <div className={styles.filterGrid}>
+        <SelectFilter
+          label="Edad"
+          value={filters.ageGroup}
+          allLabel="Todas"
+          options={AGE_OPTIONS}
+          onChange={(value) => patch({ ageGroup: value as AnalyticsFilters["ageGroup"] })}
         />
-      </label>
-
-      <label className={styles.filter}>
-        <span className={styles.filterLabel}>Hasta</span>
-        <input
-          type="date"
-          className={styles.select}
-          value={filters.to ?? ""}
-          onChange={(event) => patch({ to: event.target.value || undefined })}
+        <SelectFilter
+          label="Región"
+          value={filters.region}
+          allLabel="Todas"
+          options={REGION_OPTIONS}
+          onChange={(value) => patch({ region: value as AnalyticsFilters["region"] })}
         />
-      </label>
-
-      <button
-        type="button"
-        className={styles.clearFilters}
-        onClick={() => onChange({ dateField: "notificacion" })}
-      >
-        Limpiar filtros
-      </button>
-    </div>
+        <SelectFilter
+          label="Gravedad"
+          value={filters.serious === undefined ? undefined : String(filters.serious)}
+          allLabel="Todas"
+          options={SERIOUS_OPTIONS}
+          onChange={(value) => patch({ serious: value === undefined ? undefined : value === "true" })}
+        />
+        <SelectFilter
+          label="Clasificación MedDRA"
+          value={filters.meddra}
+          allLabel="Todas"
+          options={toOptions(options.meddraTerms)}
+          onChange={(value) => patch({ meddra: value })}
+        />
+        <SelectFilter
+          label="Producto"
+          value={filters.product}
+          allLabel="Todos"
+          options={toOptions(options.products)}
+          onChange={(value) => patch({ product: value })}
+        />
+        <SelectFilter
+          label="Contenido de THC"
+          value={filters.thc}
+          allLabel="Todos"
+          options={COMPOSITION_OPTIONS}
+          onChange={(value) => patch({ thc: value as AnalyticsFilters["thc"] })}
+        />
+        <SelectFilter
+          label="Contenido de CBD"
+          value={filters.cbd}
+          allLabel="Todos"
+          options={COMPOSITION_OPTIONS}
+          onChange={(value) => patch({ cbd: value as AnalyticsFilters["cbd"] })}
+        />
+        <SelectFilter
+          label="Área reportante"
+          value={filters.reportingArea}
+          allLabel="Todas"
+          options={REPORTING_AREA_OPTIONS}
+          onChange={(value) => patch({ reportingArea: value })}
+        />
+      </div>
+    </section>
   );
 }

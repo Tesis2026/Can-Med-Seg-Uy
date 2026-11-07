@@ -175,10 +175,10 @@ export {
 } from "./enums/analytics-chart";
 
 export {
-  ADULT_AGE,
-  AgeGroup,
+  AGE_BUCKETS,
   AGE_GROUPS,
   AGE_GROUP_LABELS,
+  AGE_SIN_DATO,
   COMPOSITION_BUCKETS,
   COMPOSITION_BUCKET_KEYS,
   compositionBucketLabel,

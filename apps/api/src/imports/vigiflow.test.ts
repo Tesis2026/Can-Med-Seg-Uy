@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import ExcelJS from 'exceljs';
-import { parseVigiDate, parseVigiFlow } from './vigiflow';
+import { parseVigiAge, parseVigiDate, parseVigiFlow, yearsBetween } from './vigiflow';
 
 export function fixture(id = 'TEST-001') {
   const book = new ExcelJS.Workbook();
@@ -166,14 +166,78 @@ test('valores ajenos a las categorías se conservan sin romper el análisis', as
   }
 });
 
-test('convierte coma decimal y no inventa edad en años para lactantes', async () => {
+test('convierte coma decimal y la edad de lactantes a años cumplidos', async () => {
   const book = fixture();
   book.getWorksheet('Reportes')!.getCell('I2').value = '162,5';
   book.getWorksheet('Reportes')!.getCell('H2').value = '6 Mes';
   const [row] = await parse(book);
   assert.equal(row!.report.patient.heightM, 1.625);
+  assert.equal(row!.report.patient.ageAtEventStart, 0);
+  assert.ok(!row!.warnings.some(warning => warning.includes('Edad')));
+});
+
+test('convierte cada unidad de edad de VigiFlow a años cumplidos', () => {
+  const cases: [string, number | null][] = [
+    ['31 Año', 31], ['5 años', 5], ['4 Mes', 0], ['11 meses', 0], ['18 Mes', 1], ['24 Mes', 2], ['36 meses', 3],
+    ['2 Década', 20], ['3 decadas', 30], ['10 Semana', 0], ['160 semanas', 3], ['20 Día', 0], ['800 días', 2],
+    ['12 Hora', 0], ['1,5 Año', 1], ['  7  AÑO ', 7],
+    ['Año', null], ['31', null], ['31 lunas', null], ['', null], ['-3 Año', null],
+  ];
+  for (const [value, expected] of cases) assert.equal(parseVigiAge(value), expected, value);
+});
+
+test('calcula años cumplidos entre fechas', () => {
+  assert.equal(yearsBetween('15/03/1995', '14/03/2026'), 30);
+  assert.equal(yearsBetween('15/03/1995', '15/03/2026'), 31);
+  assert.equal(yearsBetween('01/09/2026', '30/09/2026'), 0);
+  assert.equal(yearsBetween('01/10/2026', '30/09/2026'), null);
+  assert.equal(yearsBetween('', '30/09/2026'), null);
+});
+
+test('sin edad declarada usa la fecha de nacimiento al comienzo de la reacción', async () => {
+  const book = fixture();
+  book.getWorksheet('Reportes')!.getCell('H2').value = null;
+  // Nacimiento 15/03/1995, reacción 30/09/2026 → 31 años.
+  const [row] = await parse(book);
+  assert.equal(row!.report.patient.ageAtEventStart, 31);
+  assert.ok(row!.warnings.some(warning => warning.includes('Edad calculada con la fecha de nacimiento')));
+
+  // Un lactante: nace el 01/03/2026 y la reacción es el 30/09/2026 → 0 años.
+  book.getWorksheet('Reportes')!.getCell('F2').value = 20260301;
+  const [infant] = await parse(book);
+  assert.equal(infant!.report.patient.ageAtEventStart, 0);
+});
+
+test('la edad declarada tiene prioridad sobre la fecha de nacimiento', async () => {
+  const book = fixture();
+  book.getWorksheet('Reportes')!.getCell('H2').value = '2 Década';
+  const [row] = await parse(book);
+  assert.equal(row!.report.patient.ageAtEventStart, 20);
+});
+
+test('edad con formato desconocido cae a la fecha de nacimiento', async () => {
+  const book = fixture();
+  book.getWorksheet('Reportes')!.getCell('H2').value = 'adulto';
+  const [row] = await parse(book);
+  assert.equal(row!.report.patient.ageAtEventStart, 31);
+  assert.ok(row!.warnings.some(warning => warning.includes('adulto')));
+});
+
+test('sin fecha de comienzo de la reacción usa la recepción inicial', async () => {
+  const book = fixture();
+  book.getWorksheet('Reportes')!.getCell('H2').value = null;
+  book.getWorksheet('Reacciones')!.getCell('D2').value = null;
+  // Nacimiento 15/03/1995, recepción 01/10/2026 → 31 años.
+  const [row] = await parse(book);
+  assert.equal(row!.report.patient.ageAtEventStart, 31);
+});
+
+test('sin edad ni fecha de nacimiento la edad queda vacía', async () => {
+  const book = fixture();
+  book.getWorksheet('Reportes')!.getCell('H2').value = null;
+  book.getWorksheet('Reportes')!.getCell('F2').value = null;
+  const [row] = await parse(book);
   assert.equal(row!.report.patient.ageAtEventStart, undefined);
-  assert.ok(row!.warnings.some(warning => warning.includes('6 Mes')));
 });
 
 test('duraciones y edades fuera del rango de almacenamiento generan errores por reporte', async () => {

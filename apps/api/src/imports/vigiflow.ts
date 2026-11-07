@@ -52,6 +52,41 @@ export function parseVigiDate(value: string): string {
   if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return '';
   return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
 }
+/**
+ * Años que representa cada unidad de «Edad al comienzo de la reacción». VigiFlow
+ * siempre exporta «<número> <unidad>» (p. ej. «4 Mes», «31 Año», «2 Década»).
+ */
+const AGE_UNIT_YEARS: Record<string, number> = {
+  hora: 1 / (24 * 365.25), horas: 1 / (24 * 365.25), hour: 1 / (24 * 365.25), hours: 1 / (24 * 365.25),
+  dia: 1 / 365.25, dias: 1 / 365.25, day: 1 / 365.25, days: 1 / 365.25,
+  semana: 7 / 365.25, semanas: 7 / 365.25, week: 7 / 365.25, weeks: 7 / 365.25,
+  mes: 1 / 12, meses: 1 / 12, month: 1 / 12, months: 1 / 12,
+  ano: 1, anos: 1, year: 1, years: 1,
+  decada: 10, decadas: 10, decade: 10, decades: 10,
+};
+
+/**
+ * Convierte la edad declarada a años cumplidos (se trunca: «18 Mes» = 1 año,
+ * «4 Mes» = 0 años). Devuelve `null` si el texto no tiene la forma esperada.
+ */
+export function parseVigiAge(value: string): number | null {
+  const match = /^(\d+(?:[.,]\d+)?)\s*([a-z]+)$/.exec(normalize(value));
+  if (!match) return null;
+  const factor = AGE_UNIT_YEARS[match[2]!];
+  if (factor === undefined) return null;
+  // El épsilon evita que un error de redondeo baje un año (p. ej. 24 meses).
+  return Math.floor(Number(match[1]!.replace(',', '.')) * factor + 1e-9);
+}
+
+/** Años cumplidos entre dos fechas `dd/mm/aaaa`; `null` si el resultado no tiene sentido. */
+export function yearsBetween(birthDate: string, reference: string): number | null {
+  if (!birthDate || !reference) return null;
+  const [bd, bm, by] = birthDate.split('/').map(Number) as [number, number, number];
+  const [rd, rm, ry] = reference.split('/').map(Number) as [number, number, number];
+  const years = ry - by - (rm < bm || (rm === bm && rd < bd) ? 1 : 0);
+  return years >= 0 ? years : null;
+}
+
 const isoDate = (value: string) => value ? `${value.slice(6)}-${value.slice(3, 5)}-${value.slice(0, 2)}T12:00:00.000Z` : null;
 
 function checkArchive(buffer: Buffer): void {
@@ -199,9 +234,21 @@ export async function parseVigiFlow(buffer: Buffer): Promise<ParsedImportRow[]> 
         }),
       };
     });
+    // Edad: primero «Edad al comienzo de la reacción»; si falta o no se
+    // reconoce, se calcula con la fecha de nacimiento y el comienzo de la
+    // reacción (o, en su defecto, la recepción inicial).
     const ageRaw = get(source, 'Edad al comienzo de la reacción');
-    const age = /^(\d+)\s*(año|años|year|years)$/i.exec(ageRaw);
-    if (ageRaw && !age) warnings.push(`Edad «${ageRaw}»: no se convierte automáticamente a años enteros.`);
+    const birthDate = date(source, 'Fecha de nacimiento');
+    let ageYears: number | null = ageRaw ? parseVigiAge(ageRaw) : null;
+    if (ageRaw && ageYears === null) warnings.push(`Edad «${ageRaw}»: formato no reconocido; se intenta calcular con la fecha de nacimiento.`);
+    if (ageYears === null && birthDate) {
+      const toTime = (value: string) => Date.UTC(Number(value.slice(6)), Number(value.slice(3, 5)) - 1, Number(value.slice(0, 2)));
+      const reactionStart = events.map(event => event.startDate).filter(Boolean).sort((a, b) => toTime(a) - toTime(b))[0];
+      const reference = reactionStart || date(source, 'Fecha de recepción inicial');
+      ageYears = yearsBetween(birthDate, reference);
+      if (ageYears !== null) warnings.push(`Edad calculada con la fecha de nacimiento (${birthDate}) al ${reference}: ${ageYears} años.`);
+      else if (reference) warnings.push(`La fecha de nacimiento (${birthDate}) es posterior al ${reference}; no se calcula la edad.`);
+    }
     const height = number(source, 'Altura (cm)');
     warnings.push('País del evento y departamento del paciente no informados: no se deducen de la ubicación del notificador.');
     warnings.push('La exportación no incluye email ni teléfono del notificador; quedan vacíos.');
@@ -209,10 +256,10 @@ export async function parseVigiFlow(buffer: Buffer): Promise<ParsedImportRow[]> 
     const report = adverseEventReportDraftSchema.parse({
       status: 'aprobado_local', currentStep: 5,
       patient: {
-        initials: get(source, 'Iniciales'), countryOfEventStart: '', birthDate: date(source, 'Fecha de nacimiento'),
+        initials: get(source, 'Iniciales'), countryOfEventStart: '', birthDate,
         sex: mapped(source, 'Sexo', { femenino: 'femenino', masculino: 'masculino', otro: 'otro' }),
         weightKg: number(source, 'Peso (kg)'), heightM: height === undefined ? undefined : height / 100,
-        ageAtEventStart: age ? integer(age[1]!, 'Edad') : undefined,
+        ageAtEventStart: ageYears === null ? undefined : integer(String(ageYears), 'Edad'),
       },
       adverseEventDescription: get(source, 'Caso narrativo'), events, medicines: mappedMeds,
       additionalComments: get(source, 'Comentarios del notificador'),
